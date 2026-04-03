@@ -1,0 +1,8 @@
+version: "1.0"
+environment:
+  name: "commerce_ops_v1"
+  description: "A benchmark environment for autonomous digital storefront operations."
+  entrypoint: "ecom_env:EcomEnv"
+  observation_model: "ecom_env:EcomObservation"
+  action_model: "ecom_env:EcomAction"
+  reward_model: "ecom_env:EcomReward"
