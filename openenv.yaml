@@ -6,3 +6,19 @@ environment:
   observation_model: "ecom_env:EcomObservation"
   action_model: "ecom_env:EcomAction"
   reward_model: "ecom_env:EcomReward"
+
+tasks:
+  - name: triage_task
+    description: "Resolve any open customer support ticket."
+    difficulty: easy
+    grader: "ecom_env:grade_triage_task"
+
+  - name: inventory_task
+    description: "Maintain cotton_set stock above zero while keeping the bank balance positive."
+    difficulty: medium
+    grader: "ecom_env:grade_inventory_task"
+
+  - name: profit_task
+    description: "Grow the bank balance beyond the initial $1000 seed capital."
+    difficulty: hard
+    grader: "ecom_env:grade_profit_task"

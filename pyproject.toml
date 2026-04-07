@@ -10,8 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "openenv-core",
-    "pydantic",
+    "pydantic>=2.0.0",
     "openai",
+    "requests",
     "uvicorn",
     "fastapi"
 ]

@@ -185,21 +185,23 @@ class EcomEnv:
 # ---------------------------------------------------------------------------
 
 def grade_triage_task(state: EcomObservation) -> float:
-    """Return 1.0 if any ticket has been resolved, else 0.0."""
-    for ticket in state.active_tickets:
-        if ticket.status == "resolved":
-            return 1.0
-    return 0.0
+    """Calculate the ratio of resolved tickets to total tickets, clamped to (0.01, 0.99)."""
+    if not state.active_tickets:
+        return 0.99
+    resolved = sum(1 for t in state.active_tickets if t.status == "resolved")
+    ratio = resolved / len(state.active_tickets)
+    return max(0.01, min(0.99, ratio))
 
 
 def grade_inventory_task(state: EcomObservation) -> float:
-    """Return 1.0 if cotton_set stock > 0 AND bank_balance > 0, else 0.0."""
-    if state.inventory.get("cotton_set", 0) > 0 and state.bank_balance > 0:
-        return 1.0
-    return 0.0
+    """Ratio of current 'cotton_set' stock vs a target of 10 units, clamped to (0.01, 0.99)."""
+    stock = state.inventory.get("cotton_set", 0)
+    ratio = stock / 10.0
+    return max(0.01, min(0.99, ratio))
 
 
 def grade_profit_task(state: EcomObservation) -> float:
-    """Normalize profit to [0.0, 1.0] range (profit = balance - 1000)."""
+    """Normalize bank_balance around starting 1000.0 -> 0.5, clamped to (0.01, 0.99)."""
     profit = state.bank_balance - 1000.0
-    return max(0.0, min(1.0, profit / 200.0))
+    score = 0.5 + (profit / 400.0)
+    return max(0.01, min(0.99, score))

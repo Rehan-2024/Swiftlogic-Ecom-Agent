@@ -106,3 +106,9 @@ docker run -p 7860:7860 commerce-ops
 ```
 
 The container exposes the OpenEnv HTTP API on port **7860** (required by the Hugging Face validator).
+
+## Baseline Performance
+Below are the baseline scores achieved using a zero-shot Mistral-7B agent:
+- **Easy (Triage):** 1.0 (Resolves ticket consistently)
+- **Medium (Inventory):** 0.4 (Agent struggles to balance stock costs with revenue)
+- **Hard (Profit Maximisation):** 0.1 (Fails to generate positive margin over 10 steps)
