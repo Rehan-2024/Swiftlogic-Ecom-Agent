@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
-
-export PATH="/home/kali/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # --- Color Definitions ---
 BOLD='\033[1m'
