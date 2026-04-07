@@ -79,6 +79,33 @@ async def get_state():
     return {"observation": obs.model_dump()}
 
 
+@app.get("/tasks")
+async def get_tasks_endpoint():
+    return [
+        {
+            "task_id": "triage_task",
+            "name": "triage_task",
+            "description": "Resolve any open customer support ticket.",
+            "difficulty": "easy",
+            "grader": "ecom_env:grade_triage_task"
+        },
+        {
+            "task_id": "inventory_task",
+            "name": "inventory_task",
+            "description": "Maintain cotton_set stock above zero while keeping the bank balance positive.",
+            "difficulty": "medium",
+            "grader": "ecom_env:grade_inventory_task"
+        },
+        {
+            "task_id": "profit_task",
+            "name": "profit_task",
+            "description": "Grow the bank balance beyond the initial $1000 seed capital.",
+            "difficulty": "hard",
+            "grader": "ecom_env:grade_profit_task"
+        }
+    ]
+
+
 def main():
     # Bind to the port Hugging Face expects
     uvicorn.run(app, host="0.0.0.0", port=7860)
