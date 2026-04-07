@@ -184,24 +184,24 @@ class EcomEnv:
 # Phase 4: Deterministic Grading Functions
 # ---------------------------------------------------------------------------
 
-def grade_triage_task(state: EcomObservation) -> float:
+def grade_triage_task(initial_state: EcomObservation, final_state: EcomObservation) -> float:
     """Calculate the ratio of resolved tickets to total tickets, clamped to (0.01, 0.99)."""
-    if not state.active_tickets:
+    if not final_state.active_tickets:
         return 0.99
-    resolved = sum(1 for t in state.active_tickets if t.status == "resolved")
-    ratio = resolved / len(state.active_tickets)
+    resolved = sum(1 for t in final_state.active_tickets if t.status == "resolved")
+    ratio = resolved / len(final_state.active_tickets)
     return max(0.01, min(0.99, ratio))
 
 
-def grade_inventory_task(state: EcomObservation) -> float:
+def grade_inventory_task(initial_state: EcomObservation, final_state: EcomObservation) -> float:
     """Ratio of current 'cotton_set' stock vs a target of 10 units, clamped to (0.01, 0.99)."""
-    stock = state.inventory.get("cotton_set", 0)
+    stock = final_state.inventory.get("cotton_set", 0)
     ratio = stock / 10.0
     return max(0.01, min(0.99, ratio))
 
 
-def grade_profit_task(state: EcomObservation) -> float:
+def grade_profit_task(initial_state: EcomObservation, final_state: EcomObservation) -> float:
     """Normalize bank_balance around starting 1000.0 -> 0.5, clamped to (0.01, 0.99)."""
-    profit = state.bank_balance - 1000.0
+    profit = final_state.bank_balance - 1000.0
     score = 0.5 + (profit / 400.0)
     return max(0.01, min(0.99, score))
