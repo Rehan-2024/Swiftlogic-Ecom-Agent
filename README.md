@@ -74,14 +74,16 @@ Every `step` represents a strategic decision point in a business day.
 
 ## Tasks
 
+All graders return scores strictly within the **(0.01, 0.99)** range to satisfy Phase 2 Deep Validation. Scores of exactly `0.0` or `1.0` are never produced.
+
 ### Easy — Ticket Triage
-Resolve any one open support ticket. Graded by `grade_triage_task`.
+Resolve open support tickets. Score = ratio of resolved tickets to total tickets. Graded by `grade_triage_task`.
 
 ### Medium — Inventory Health
-Ensure `cotton_set` stock remains above zero **and** the bank balance stays positive. Graded by `grade_inventory_task`.
+Maintain `cotton_set` stock levels relative to a target of 10 units. Score = stock ratio clamped to (0.01, 0.99). Graded by `grade_inventory_task`.
 
 ### Hard — Profit Maximisation
-Grow the bank balance beyond the initial $1 000 seed capital. Normalised profit is mapped to `[0.0, 1.0]` via `grade_profit_task`.
+Grow the bank balance beyond the initial $1,000 seed capital. The profit is normalised around 0.5 (break-even) and clamped to (0.01, 0.99). Graded by `grade_profit_task`.
 
 ---
 
@@ -107,8 +109,20 @@ docker run -p 7860:7860 commerce-ops
 
 The container exposes the OpenEnv HTTP API on port **7860** (required by the Hugging Face validator).
 
+### API Compatibility
+
+The `/step` endpoint accepts **flat JSON actions** directly, ensuring 100% compatibility with the hackathon's automated validator:
+
+```bash
+curl -X POST https://your-space.hf.space/step \
+  -H "Content-Type: application/json" \
+  -d '{"action_type": "wait"}'
+```
+
+Both flat (`{"action_type": "wait"}`) and wrapped (`{"action": {"action_type": "wait"}}`) formats are supported.
+
 ## Baseline Performance
 Below are the baseline scores achieved using a zero-shot Mistral-7B agent:
-- **Easy (Triage):** 1.0 (Resolves ticket consistently)
-- **Medium (Inventory):** 0.4 (Agent struggles to balance stock costs with revenue)
-- **Hard (Profit Maximisation):** 0.1 (Fails to generate positive margin over 10 steps)
+- **Easy (Triage):** 0.99 (Resolves ticket consistently; capped by safety buffer)
+- **Medium (Inventory):** 0.40 (Agent struggles to balance stock costs with revenue)
+- **Hard (Profit Maximisation):** 0.10 (Fails to generate positive margin over 10 steps)
