@@ -201,7 +201,7 @@ def grade_inventory_task(initial_state: EcomObservation, final_state: EcomObserv
 
 
 def grade_profit_task(initial_state: EcomObservation, final_state: EcomObservation) -> float:
-    """Normalize bank_balance around starting 1000.0 -> 0.5, clamped to (0.01, 0.99)."""
-    profit = final_state.bank_balance - 1000.0
+    """Normalize bank_balance around starting balance -> 0.5, clamped to (0.01, 0.99)."""
+    profit = final_state.bank_balance - initial_state.bank_balance
     score = 0.5 + (profit / 400.0)
     return max(0.01, min(0.99, score))
