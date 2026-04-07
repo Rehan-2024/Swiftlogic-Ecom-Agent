@@ -8,7 +8,10 @@ import json
 
 from openai import OpenAI
 
-from ecom_env import EcomEnv, WaitAction, RestockAction, RefundAction
+from ecom_env import (
+    EcomEnv, WaitAction, RestockAction, RefundAction,
+    grade_triage_task, grade_inventory_task, grade_profit_task
+)
 
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -19,9 +22,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: str | Non
     done_val = str(done).lower()
     print(f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}", flush=True)
 
-def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: list[float], graders_str: str = "") -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
-    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}", flush=True)
+    graders_part = f" graders={graders_str}" if graders_str else ""
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}{graders_part}", flush=True)
 
 
 def main():
@@ -38,6 +42,7 @@ def main():
     # --- Initialize environment ---
     env = EcomEnv()
     env.reset(seed=42)
+    initial_state = env.state().model_copy(deep=True)
 
     # --- [START] line ---
     log_start(task_name, benchmark, model_name)
@@ -97,7 +102,15 @@ Do not output any markdown formatting or explanations, just the JSON object.
     success = not done or step_num == total_steps
     raw_score = sum(rewards)
     score = max(0.01, min(0.99, raw_score))
-    log_end(success, len(rewards), score, rewards)
+    
+    final_state = env.state()
+    graders_str = (
+        f"triage_task:{grade_triage_task(initial_state, final_state):.2f},"
+        f"inventory_task:{grade_inventory_task(initial_state, final_state):.2f},"
+        f"profit_task:{grade_profit_task(initial_state, final_state):.2f}"
+    )
+    
+    log_end(success, len(rewards), score, rewards, graders_str)
 
 
 if __name__ == "__main__":
