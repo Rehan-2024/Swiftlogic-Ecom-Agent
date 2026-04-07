@@ -33,7 +33,7 @@ def main():
     api_key = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 
     # --- Initialize OpenAI client ---
-    client = OpenAI(base_url=api_base, api_key=api_key)
+    client = OpenAI(base_url=api_base, api_key=api_key, timeout=20)
 
     # --- Initialize environment ---
     env = EcomEnv()
@@ -95,7 +95,8 @@ Do not output any markdown formatting or explanations, just the JSON object.
 
     # --- [END] line ---
     success = not done or step_num == total_steps
-    score = sum(rewards)
+    raw_score = sum(rewards)
+    score = max(0.01, min(0.99, raw_score))
     log_end(success, len(rewards), score, rewards)
 
 

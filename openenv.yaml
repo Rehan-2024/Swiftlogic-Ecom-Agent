@@ -1,6 +1,9 @@
 version: "1.0"
 environment:
   name: "commerce_ops_v1"
+  env_id: "commerce_ops_v1"
+  version: "1.0.0"
+  author: "Rehan"
   description: "A benchmark environment for autonomous digital storefront operations."
   entrypoint: "ecom_env:EcomEnv"
   observation_model: "ecom_env:EcomObservation"
