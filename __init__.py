@@ -1,4 +1,4 @@
-from .ecom_env import (
+from ecom_env import (
     EcomEnv,
     EcomAction,
     EcomObservation,
