@@ -5,19 +5,65 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-# Add the parent directory to the path so it can find ecom_env
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure ecom_env is importable from both local and Docker contexts
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
-from ecom_env import (
-    EcomEnv, EcomAction, EcomObservation, EcomReward,
-    RestockAction, RefundAction, WaitAction,
-)
+try:
+    from ecom_env import (
+        EcomEnv, EcomAction, EcomObservation, EcomReward,
+        RestockAction, RefundAction, WaitAction,
+        grade_triage_task, grade_inventory_task, grade_profit_task,
+    )
+except ImportError as e:
+    raise RuntimeError(f"Cannot import ecom_env — check PYTHONPATH. Error: {e}")
 
-# --- Create the app manually for full control over the /step body format ---
 app = FastAPI(title="Swiftlogic E-commerce Agent")
 
-# Shared environment instance
 env = EcomEnv()
+
+# --- Store initial state for grading ---
+_initial_state = None
+
+
+TASKS = [
+    {
+        "id": "triage_task",
+        "name": "Customer Ticket Triage",
+        "description": "Resolve all open customer support tickets by issuing refund actions.",
+        "difficulty": "easy",
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_triage_task"
+        }
+    },
+    {
+        "id": "inventory_task",
+        "name": "Inventory Management",
+        "description": "Maintain cotton_set stock above zero while keeping bank balance positive.",
+        "difficulty": "medium",
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_inventory_task"
+        }
+    },
+    {
+        "id": "profit_task",
+        "name": "Profit Maximization",
+        "description": "Grow the bank balance beyond the initial $1000 seed capital.",
+        "difficulty": "hard",
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_profit_task"
+        }
+    },
+]
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 
 @app.get("/")
@@ -27,30 +73,29 @@ async def root():
         "environment": "Swiftlogic E-commerce Agent",
         "version": "1.0.0",
         "framework": "OpenEnv v0.2.3",
-        "endpoints": ["/reset", "/step", "/state"],
+        "endpoints": ["/reset", "/step", "/state", "/tasks", "/grader", "/health"],
     }
 
 
 @app.post("/reset")
 async def reset_env(request: Request):
-    body = await request.json() if await request.body() else {}
-    seed = body.get("seed", 42)
+    global _initial_state
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    seed = body.get("seed", 42) if isinstance(body, dict) else 42
     obs = env.reset(seed=seed)
+    _initial_state = obs.model_copy(deep=True)
     return {"observation": obs.model_dump(), "reward": 0.0, "done": False}
 
 
 @app.post("/step")
 async def step_env(request: Request):
-    """
-    Accepts FLAT JSON like {"action_type": "wait"}
-    OR wrapped JSON like {"action": {"action_type": "wait"}}.
-    """
     body = await request.json()
-
-    # Support both flat and wrapped formats
     action_data = body.get("action", body) if isinstance(body, dict) else body
 
-    # Map action_type to the correct Pydantic model
     a_type = action_data.get("action_type")
     if a_type == "restock":
         action = RestockAction(**action_data)
@@ -80,34 +125,41 @@ async def get_state():
 
 
 @app.get("/tasks")
-async def get_tasks_endpoint():
-    return [
-        {
-            "task_id": "triage_task",
-            "name": "triage_task",
-            "description": "Resolve any open customer support ticket.",
-            "difficulty": "easy",
-            "grader": "ecom_env:grade_triage_task"
-        },
-        {
-            "task_id": "inventory_task",
-            "name": "inventory_task",
-            "description": "Maintain cotton_set stock above zero while keeping the bank balance positive.",
-            "difficulty": "medium",
-            "grader": "ecom_env:grade_inventory_task"
-        },
-        {
-            "task_id": "profit_task",
-            "name": "profit_task",
-            "description": "Grow the bank balance beyond the initial $1000 seed capital.",
-            "difficulty": "hard",
-            "grader": "ecom_env:grade_profit_task"
-        }
-    ]
+async def get_tasks():
+    return TASKS
+
+
+@app.post("/grader")
+async def run_grader(request: Request):
+    """Run all graders against current state and return scores."""
+    global _initial_state
+    final_state = env.state()
+
+    if _initial_state is None:
+        # fallback: reset and use current as both
+        env.reset(seed=42)
+        _initial_state = env.state().model_copy(deep=True)
+
+    scores = {
+        "triage_task":    grade_triage_task(_initial_state, final_state),
+        "inventory_task": grade_inventory_task(_initial_state, final_state),
+        "profit_task":    grade_profit_task(_initial_state, final_state),
+    }
+
+    results = []
+    for task in TASKS:
+        tid = task["id"]
+        score = scores.get(tid, 0.0)
+        results.append({
+            "task_id": tid,
+            "score": round(score, 4),
+            "grader": task["grader"],
+        })
+
+    return {"scores": results}
 
 
 def main():
-    # Bind to the port Hugging Face expects
     uvicorn.run(app, host="0.0.0.0", port=7860)
 
 
