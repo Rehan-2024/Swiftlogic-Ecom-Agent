@@ -30,10 +30,9 @@ def log_end(success: bool, steps: int, score: float, rewards: list[float], grade
 
 def main():
     # --- Environment config ---
-    task_name = "commerce_ops_v1"
     benchmark = "commerce_ops_v1"
     api_base = os.getenv("API_BASE_URL")
-    model_name = os.getenv("MODEL_NAME")
+    model_name = os.getenv("MODEL_NAME", "default-model")
     api_key = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 
     # --- Initialize OpenAI client ---
@@ -41,11 +40,6 @@ def main():
 
     # --- Initialize environment ---
     env = EcomEnv()
-    env.reset(seed=42)
-    initial_state = env.state().model_copy(deep=True)
-
-    # --- [START] line ---
-    log_start(task_name, benchmark, model_name)
 
     system_prompt = """You are an autonomous digital storefront operator.
 Your goal is to manage inventory, handle customer support tickets, and maximize profit.
@@ -56,61 +50,76 @@ You must return only raw JSON matching one of these Action schemas, depending on
 Do not output any markdown formatting or explanations, just the JSON object.
 """
 
-    # --- Active Inference Loop ---
-    rewards: list[float] = []
-    total_steps = 5
-    done = False
-    step_num = 0
+    tasks = ["triage_task", "inventory_task", "profit_task"]
 
-    for step_num in range(1, total_steps + 1):
-        obs_state = env.state()
-        
-        try:
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Current Observation:\n{obs_state.model_dump_json()}"}
-                ],
-                response_format={"type": "json_object"}
-            )
-            raw_text = response.choices[0].message.content
-            action_data = json.loads(raw_text)
+    for task_name in tasks:
+        env.reset(seed=42)
+        initial_state = env.state().model_copy(deep=True)
+
+        # --- [START] line ---
+        log_start(task_name, benchmark, model_name)
+
+        # --- Active Inference Loop ---
+        rewards: list[float] = []
+        total_steps = 5
+        done = False
+        step_num = 0
+
+        for step_num in range(1, total_steps + 1):
+            obs_state = env.state()
             
-            a_type = action_data.get("action_type")
-            if a_type == "restock":
-                action = RestockAction(**action_data)
-            elif a_type == "refund":
-                action = RefundAction(**action_data)
-            else:
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Current Observation:\n{obs_state.model_dump_json()}"}
+                    ],
+                    response_format={"type": "json_object"}
+                )
+                raw_text = response.choices[0].message.content
+                action_data = json.loads(raw_text)
+                
+                a_type = action_data.get("action_type")
+                if a_type == "restock":
+                    action = RestockAction(**action_data)
+                elif a_type == "refund":
+                    action = RefundAction(**action_data)
+                else:
+                    action = WaitAction()
+            except Exception:
                 action = WaitAction()
-        except Exception:
-            action = WaitAction()
 
-        obs, reward_obj, done, info = env.step(action)
+            obs, reward_obj, done, info = env.step(action)
 
-        reward_val = reward_obj.value
-        rewards.append(reward_val)
+            reward_val = reward_obj.value
+            rewards.append(reward_val)
 
-        error_str = info.get("error")
-        log_step(step_num, action.action_type, reward_val, done, error_str)
+            error_str = info.get("error")
+            log_step(step_num, action.action_type, reward_val, done, error_str)
 
-        if done:
-            break
+            if done:
+                break
 
-    # --- [END] line ---
-    success = not done or step_num == total_steps
-    raw_score = sum(rewards)
-    score = max(0.01, min(0.99, raw_score))
-    
-    final_state = env.state()
-    graders_str = (
-        f"triage_task:{grade_triage_task(initial_state, final_state):.2f},"
-        f"inventory_task:{grade_inventory_task(initial_state, final_state):.2f},"
-        f"profit_task:{grade_profit_task(initial_state, final_state):.2f}"
-    )
-    
-    log_end(success, len(rewards), score, rewards, graders_str)
+        # --- [END] line ---
+        success = not done or step_num == total_steps
+        raw_score = sum(rewards)
+        score = max(0.01, min(0.99, raw_score))
+        
+        final_state = env.state()
+        
+        if task_name == "triage_task":
+            grader_score = grade_triage_task(initial_state, final_state)
+        elif task_name == "inventory_task":
+            grader_score = grade_inventory_task(initial_state, final_state)
+        elif task_name == "profit_task":
+            grader_score = grade_profit_task(initial_state, final_state)
+        else:
+            grader_score = 0.0
+
+        graders_str = f"{task_name}:{grader_score:.2f}"
+        
+        log_end(success, len(rewards), score, rewards, graders_str)
 
 
 if __name__ == "__main__":

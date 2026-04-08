@@ -19,3 +19,7 @@ dependencies = [
 
 [project.scripts]
 server = "server.app:main"
+
+[tool.pyright]
+include = ["."]
+extraPaths = ["."]
