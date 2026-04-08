@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "commerce-ops-env"
+name = "commerce-ops-v1"
 version = "1.0.0"
 description = "AI Autonomous Startup Operator Environment"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "openenv-core",
+    "openenv-core>=0.2.1",
     "pydantic>=2.0.0",
     "openai",
     "requests",
