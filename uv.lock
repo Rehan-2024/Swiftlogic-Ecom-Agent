@@ -476,20 +476,26 @@ wheels = [
 ]
 
 [[package]]
-name = "commerce-ops-env"
+name = "commerce-ops-v1"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "fastapi" },
     { name = "openai" },
     { name = "openenv-core" },
     { name = "pydantic" },
+    { name = "requests" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi" },
     { name = "openai" },
-    { name = "openenv-core" },
-    { name = "pydantic" },
+    { name = "openenv-core", specifier = ">=0.2.1" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "requests" },
+    { name = "uvicorn" },
 ]
 
 [[package]]
