@@ -1,27 +1,31 @@
-version: "1.0"
-environment:
-  name: "commerce_ops_v1"
-  env_id: "commerce_ops_v1"
-  version: "1.0.0"
-  author: "Rehan"
-  description: "A benchmark environment for autonomous digital storefront operations."
-  entrypoint: "ecom_env:EcomEnv"
-  observation_model: "ecom_env:EcomObservation"
-  action_model: "ecom_env:EcomAction"
-  reward_model: "ecom_env:EcomReward"
+spec_version: 1
+name: commerce-ops-v1
+type: environment
+runtime: docker
+app: server/app.py
+port: 7860
 
 tasks:
-  - name: triage_task
-    description: "Resolve any open customer support ticket."
+  - id: triage_task
+    name: "Customer Ticket Triage"
+    description: "Resolve all open customer support tickets by issuing refund actions."
     difficulty: easy
-    grader: "ecom_env:grade_triage_task"
+    grader:
+      module: ecom_env
+      function: grade_triage_task
 
-  - name: inventory_task
-    description: "Maintain cotton_set stock above zero while keeping the bank balance positive."
+  - id: inventory_task
+    name: "Inventory Management"
+    description: "Maintain cotton_set stock above zero while keeping bank balance positive."
     difficulty: medium
-    grader: "ecom_env:grade_inventory_task"
+    grader:
+      module: ecom_env
+      function: grade_inventory_task
 
-  - name: profit_task
+  - id: profit_task
+    name: "Profit Maximization"
     description: "Grow the bank balance beyond the initial $1000 seed capital."
     difficulty: hard
-    grader: "ecom_env:grade_profit_task"
+    grader:
+      module: ecom_env
+      function: grade_profit_task
