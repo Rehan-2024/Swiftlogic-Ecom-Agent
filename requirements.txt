@@ -4,3 +4,4 @@ openai
 requests
 uvicorn
 fastapi
+numpy>=1.24

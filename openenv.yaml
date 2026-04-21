@@ -1,5 +1,5 @@
 spec_version: 1
-name: commerce-ops-v1
+name: commerce-ops-v2
 type: environment
 runtime: docker
 app: server/app.py
@@ -16,7 +16,7 @@ tasks:
 
   - id: inventory_task
     name: "Inventory Management"
-    description: "Maintain cotton_set stock above zero while keeping bank balance positive."
+    description: "Maintain the target SKU stock at or above the configured safety threshold."
     difficulty: medium
     grader:
       module: ecom_env
@@ -24,7 +24,7 @@ tasks:
 
   - id: profit_task
     name: "Profit Maximization"
-    description: "Grow the bank balance beyond the initial $1000 seed capital."
+    description: "Grow the bank balance beyond the initial seed capital over a 50-day cycle."
     difficulty: hard
     grader:
       module: ecom_env

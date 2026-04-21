@@ -2,19 +2,19 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy everything to /app
 COPY . /app
 
-# Install dependencies
 RUN pip install --no-cache-dir \
     fastapi \
     uvicorn \
-    pydantic>=2.0.0 \
+    "pydantic>=2.0.0" \
     openai \
-    openenv-core
+    openenv-core \
+    "numpy>=1.24"
 
-# Ensure ecom_env.py is importable (it's in /app root)
 ENV PYTHONPATH="/app"
+
+RUN ls -la /app/configs /app/env
 
 EXPOSE 7860
 
