@@ -122,6 +122,9 @@ try:
         grade_triage_task,
         grade_inventory_task,
         grade_profit_task,
+        grade_stability_task,
+        grade_competitor_response_task,
+        grade_crisis_recovery_task,
     )
 except ImportError as e:
     raise RuntimeError(f"Cannot import ecom_env — check PYTHONPATH. Error: {e}")
@@ -291,6 +294,7 @@ TASKS = [
         "name": "Customer Ticket Triage",
         "description": "Resolve all open customer support tickets by issuing refund actions.",
         "difficulty": "easy",
+        "evaluation_only": False,
         "grader": {
             "module": "ecom_env",
             "function": "grade_triage_task",
@@ -301,6 +305,7 @@ TASKS = [
         "name": "Inventory Management",
         "description": "Maintain the target SKU stock above its configured safety threshold.",
         "difficulty": "medium",
+        "evaluation_only": False,
         "grader": {
             "module": "ecom_env",
             "function": "grade_inventory_task",
@@ -311,9 +316,43 @@ TASKS = [
         "name": "Profit Maximization",
         "description": "Grow the bank balance beyond the initial seed capital over a 50-day cycle.",
         "difficulty": "hard",
+        "evaluation_only": False,
         "grader": {
             "module": "ecom_env",
             "function": "grade_profit_task",
+        },
+    },
+    {
+        "id": "stability_task",
+        "name": "Satisfaction Stability",
+        "description": "Keep end-of-episode customer satisfaction at or above the stability target.",
+        "difficulty": "easy",
+        "evaluation_only": True,
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_stability_task",
+        },
+    },
+    {
+        "id": "competitor_response_task",
+        "name": "Competitor Response",
+        "description": "Keep the agent's prices at or below the competitor's across observed SKUs.",
+        "difficulty": "medium",
+        "evaluation_only": True,
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_competitor_response_task",
+        },
+    },
+    {
+        "id": "crisis_recovery_task",
+        "name": "Crisis Recovery",
+        "description": "Preserve or grow bank balance across market shocks and stockout cascades.",
+        "difficulty": "hard",
+        "evaluation_only": True,
+        "grader": {
+            "module": "ecom_env",
+            "function": "grade_crisis_recovery_task",
         },
     },
 ]
@@ -593,6 +632,15 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
                     initial_state, final_state, context=grader_ctx
                 ),
                 "profit_task": grade_profit_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+                "stability_task": grade_stability_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+                "competitor_response_task": grade_competitor_response_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+                "crisis_recovery_task": grade_crisis_recovery_task(
                     initial_state, final_state, context=grader_ctx
                 ),
             }

@@ -389,6 +389,13 @@ class EcomEnv:
             "triage_task": lambda i, f: grade_triage_task(i, f, context=ctx),
             "inventory_task": lambda i, f: grade_inventory_task(i, f, context=ctx),
             "profit_task": lambda i, f: grade_profit_task(i, f, context=ctx),
+            "stability_task": lambda i, f: grade_stability_task(i, f, context=ctx),
+            "competitor_response_task": lambda i, f: grade_competitor_response_task(
+                i, f, context=ctx
+            ),
+            "crisis_recovery_task": lambda i, f: grade_crisis_recovery_task(
+                i, f, context=ctx
+            ),
         }
 
     # -- Config hot-swap ------------------------------------------------
@@ -617,6 +624,114 @@ def grade_profit_task(
     return max(0.01, min(0.99, score))
 
 
+# ---------------------------------------------------------------------------
+# Evaluation-only graders (Part A3)
+# ---------------------------------------------------------------------------
+# The three graders below are *additive* and *evaluation-only*. They are
+# registered on ``/tasks`` and ``/grader`` so judges can see the full
+# picture, but they are explicitly tagged ``evaluation_only: true`` and
+# are NEVER summed into the training reward (see roadmap A.4 boundary).
+# Rationale: keeping training on the 3 stable signals (triage, inventory,
+# profit) preserves GRPO variance properties; adding three more signals
+# to the reward at the same time as the policy is learning is a known
+# source of instability (guide §7).
+#
+# All three are pure functions of ``initial_state`` and ``final_state`` —
+# no hidden state, no history buffer access, no physics touch — so they
+# respect the env-freeze contract.
+
+def grade_stability_task(
+    initial_state: EcomObservation,
+    final_state: EcomObservation,
+    *,
+    context: Optional[Dict[str, object]] = None,
+) -> float:
+    """Customer-satisfaction retention (evaluation-only, clamped (0.01, 0.99)).
+
+    Measures how well the agent preserved the end-of-episode customer
+    satisfaction signal. ``1.0`` implies perfect retention; ``0.0`` implies
+    full churn. The grader linearly maps this scalar to the clamp range
+    using a configurable ``stability_target`` (default ``0.75`` — above
+    which the score saturates near 0.99).
+    """
+    sat = float(getattr(final_state, "customer_satisfaction", 1.0) or 0.0)
+    target = 0.75
+    if context is not None:
+        try:
+            target = float(context.get("stability_target", target) or target)
+        except (TypeError, ValueError):
+            target = 0.75
+    target = max(1e-6, float(target))
+    score = sat / target
+    return max(0.01, min(0.99, score))
+
+
+def grade_competitor_response_task(
+    initial_state: EcomObservation,
+    final_state: EcomObservation,
+    *,
+    context: Optional[Dict[str, object]] = None,
+) -> float:
+    """Agent priced at-or-below competitor across observed SKUs (clamped).
+
+    Computes the mean per-SKU ratio ``our_price / competitor_price`` over
+    every SKU with both values observed, then maps via a small linear
+    window:
+
+      * ratio ≤ 0.80 → score ≈ 0.99 (decisively undercutting)
+      * ratio == 1.0 → score == 0.5 (matched)
+      * ratio ≥ 1.20 → score ≈ 0.01 (decisively over-priced)
+
+    Returns a neutral ``0.5`` if no SKU has both prices observable. Pure
+    function of the observation — no history needed.
+    """
+    prices = final_state.prices or {}
+    comp = final_state.competitor_prices or {}
+    ratios = []
+    for sku, p in prices.items():
+        c = comp.get(sku, 0.0)
+        try:
+            c_f = float(c)
+            p_f = float(p)
+        except (TypeError, ValueError):
+            continue
+        if c_f <= 0 or p_f <= 0:
+            continue
+        ratios.append(p_f / c_f)
+    if not ratios:
+        return 0.5
+    mean_ratio = sum(ratios) / len(ratios)
+    score = 1.0 - (mean_ratio - 0.8) / 0.4
+    return max(0.01, min(0.99, score))
+
+
+def grade_crisis_recovery_task(
+    initial_state: EcomObservation,
+    final_state: EcomObservation,
+    *,
+    context: Optional[Dict[str, object]] = None,
+) -> float:
+    """Bank-balance resilience across the episode (clamped (0.01, 0.99)).
+
+    Scores ``final_bank / initial_bank`` with a linear window:
+
+      * ratio ≥ 1.5 → score ≈ 0.99 (thrived through crises)
+      * ratio == 1.0 → score == 0.5 (survived flat)
+      * ratio ≤ 0.5 → score ≈ 0.01 (bank cratered)
+
+    Distinct from the profit grader: profit is absolute growth, crisis
+    recovery is *resilience* measured as a ratio so small and large
+    businesses score comparably.
+    """
+    init_bal = float(initial_state.bank_balance or 0.0)
+    final_bal = float(final_state.bank_balance or 0.0)
+    if init_bal <= 0:
+        return 0.5
+    ratio = final_bal / init_bal
+    score = 0.5 + (ratio - 1.0)
+    return max(0.01, min(0.99, score))
+
+
 __all__ = [
     "Ticket",
     "EcomObservation",
@@ -632,5 +747,8 @@ __all__ = [
     "grade_triage_task",
     "grade_inventory_task",
     "grade_profit_task",
+    "grade_stability_task",
+    "grade_competitor_response_task",
+    "grade_crisis_recovery_task",
     "generate_episode_tickets",
 ]

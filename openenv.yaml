@@ -10,6 +10,7 @@ tasks:
     name: "Customer Ticket Triage"
     description: "Resolve all open customer support tickets by issuing refund actions."
     difficulty: easy
+    evaluation_only: false
     grader:
       module: ecom_env
       function: grade_triage_task
@@ -18,6 +19,7 @@ tasks:
     name: "Inventory Management"
     description: "Maintain the target SKU stock at or above the configured safety threshold."
     difficulty: medium
+    evaluation_only: false
     grader:
       module: ecom_env
       function: grade_inventory_task
@@ -26,6 +28,34 @@ tasks:
     name: "Profit Maximization"
     description: "Grow the bank balance beyond the initial seed capital over a 50-day cycle."
     difficulty: hard
+    evaluation_only: false
     grader:
       module: ecom_env
       function: grade_profit_task
+
+  - id: stability_task
+    name: "Satisfaction Stability"
+    description: "Keep end-of-episode customer satisfaction at or above the stability target."
+    difficulty: easy
+    evaluation_only: true
+    grader:
+      module: ecom_env
+      function: grade_stability_task
+
+  - id: competitor_response_task
+    name: "Competitor Response"
+    description: "Keep the agent's prices at or below the competitor's across observed SKUs."
+    difficulty: medium
+    evaluation_only: true
+    grader:
+      module: ecom_env
+      function: grade_competitor_response_task
+
+  - id: crisis_recovery_task
+    name: "Crisis Recovery"
+    description: "Preserve or grow bank balance across market shocks and stockout cascades."
+    difficulty: hard
+    evaluation_only: true
+    grader:
+      module: ecom_env
+      function: grade_crisis_recovery_task

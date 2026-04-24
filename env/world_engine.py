@@ -2628,6 +2628,72 @@ class WorldEngine:
             current_intent = info.get("intent", "maintain_balance")
             intent_counter[current_intent] = intent_counter.get(current_intent, 0) + 1
 
+        # --- Part A5 (additive, post-hoc) -----------------------------
+        # ``action_quality`` and ``strategy_phase`` are *derived* labels
+        # that piggyback on information already present in ``info`` and
+        # ``self.state``. They DO NOT mutate state, DO NOT feed reward,
+        # and DO NOT change action / observation schemas — the env
+        # remains frozen per the global contract. Their sole purpose
+        # is to give judges / the scripted demo a one-line read on
+        # "was this step good and what phase is the agent in".
+        try:
+            action_type = str(action.get("action_type", "wait") or "wait")
+            action_err = info.get("error")
+            breakdown = info.get("reward_breakdown", {}) or {}
+            stockout_pen = abs(float(breakdown.get("stockout_penalty", 0.0) or 0.0))
+            wait_loop_pen = abs(float(breakdown.get("wait_loop_penalty", 0.0) or 0.0))
+
+            if action_err:
+                quality, quality_reason = "bad", f"action_error={action_err}"
+            elif total_reward <= -1.0 or stockout_pen > 0.5 or wait_loop_pen > 0.5:
+                reason_bits = []
+                if stockout_pen > 0.5:
+                    reason_bits.append("stockout")
+                if wait_loop_pen > 0.5:
+                    reason_bits.append("wait_loop")
+                if total_reward <= -1.0 and not reason_bits:
+                    reason_bits.append("negative_reward")
+                quality, quality_reason = "bad", ",".join(reason_bits)
+            elif total_reward >= 0.2 and action_type != "wait":
+                quality, quality_reason = "good", f"reward={total_reward:.2f}+productive"
+            elif total_reward >= 0.0:
+                quality, quality_reason = "neutral", "low_impact"
+            else:
+                quality, quality_reason = "neutral", "mild_loss"
+            info["action_quality"] = quality
+            info["action_quality_reason"] = quality_reason
+        except Exception:
+            info.setdefault("action_quality", "neutral")
+            info.setdefault("action_quality_reason", "unknown")
+
+        try:
+            max_steps = int(self.config.get("episode", {}).get("max_steps", 50) or 50)
+            step_count = int(self.state.get("step_count", 0) or 0)
+            frac = step_count / max(1, max_steps)
+            hist = self.state.get("history", {}) or {}
+            reward_buf = [float(x) for x in (hist.get("reward") or [])][-5:]
+            recent_neg = sum(1 for r in reward_buf if r < -0.5)
+            bank_buf = [float(x) for x in (hist.get("bank_balance") or [])]
+            bank_growing = (
+                len(bank_buf) >= 2 and bank_buf[-1] > bank_buf[0]
+            )
+
+            if frac < 0.2:
+                phase, conf, note = "explore", 0.6, f"step {step_count}/{max_steps}"
+            elif recent_neg >= 2:
+                phase, conf, note = "recover", 0.7, f"recent_neg={recent_neg}"
+            elif bank_growing and recent_neg == 0:
+                phase, conf, note = "exploit", 0.8, "bank_trending_up"
+            else:
+                phase, conf, note = "stabilize", 0.55, "steady_state"
+            info["strategy_phase"] = phase
+            info["strategy_phase_confidence"] = round(float(conf), 3)
+            info["strategy_phase_note"] = note
+        except Exception:
+            info.setdefault("strategy_phase", "stabilize")
+            info.setdefault("strategy_phase_confidence", 0.5)
+            info.setdefault("strategy_phase_note", "unknown")
+
         # Invariants soft-check (audit MEDIUM #5) — no-op unless the
         # COMMERCEOPS_ASSERT_INVARIANTS env flag is set.
         try:

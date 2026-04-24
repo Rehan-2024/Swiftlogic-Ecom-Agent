@@ -572,7 +572,15 @@ def test_ecom_env_graders_helper():
     env = EcomEnv("configs/siyaani_fashion.json")
     env.reset(seed=0)
     graders = env.graders()
-    assert set(graders.keys()) == {"triage_task", "inventory_task", "profit_task"}
+    # Part A3 — env exposes 3 training graders + 3 evaluation-only graders.
+    assert set(graders.keys()) == {
+        "triage_task",
+        "inventory_task",
+        "profit_task",
+        "stability_task",
+        "competitor_response_task",
+        "crisis_recovery_task",
+    }
     obs = env.state()
     # Each grader returns a float in [0.01, 0.99] (the inventory/profit clamp).
     for name, fn in graders.items():

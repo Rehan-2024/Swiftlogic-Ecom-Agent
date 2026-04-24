@@ -1,0 +1,14 @@
+# OpenEnv contract HTTP test — 2026-04-25T01:39:51
+target=http://127.0.0.1:58441
+GET /health -> 200 {"status":"ok"}
+GET /tasks -> 200 count=6
+POST /reset seed=2026 -> 200
+GET /state -> 200
+POST /step wait -> 200
+POST /step restock -> 200
+POST /step ad_spend -> 200
+POST /step negotiate -> 200
+POST /step set_price -> 200
+POST /step refund -> 200
+POST /grader -> 200
+POST /step hack_the_gibson -> 400

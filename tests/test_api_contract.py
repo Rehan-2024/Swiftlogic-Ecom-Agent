@@ -83,11 +83,25 @@ def test_grader_scores_always_in_open_interval(fresh_app):
         assert 0.01 <= entry["score"] <= 0.99
 
 
-def test_tasks_endpoint_returns_three_tasks(fresh_app):
+def test_tasks_endpoint_returns_all_registered_tasks(fresh_app):
+    """Part A3: the contract now exposes 3 training + 3 evaluation-only tasks.
+
+    Evaluation-only tasks carry ``evaluation_only: true`` so downstream
+    tooling can decide whether to fold them into training reward. The
+    three training graders retain ``evaluation_only: false``.
+    """
     r = fresh_app.get("/tasks")
     assert r.status_code == 200
-    ids = [t["id"] for t in r.json()]
-    assert set(ids) == {"triage_task", "inventory_task", "profit_task"}
+    tasks = r.json()
+    ids = {t["id"] for t in tasks}
+    training = {"triage_task", "inventory_task", "profit_task"}
+    evaluation = {"stability_task", "competitor_response_task", "crisis_recovery_task"}
+    assert ids == training | evaluation
+    by_id = {t["id"]: t for t in tasks}
+    for tid in training:
+        assert by_id[tid].get("evaluation_only") is False
+    for tid in evaluation:
+        assert by_id[tid].get("evaluation_only") is True
 
 
 def test_config_rejects_path_traversal(fresh_app):
