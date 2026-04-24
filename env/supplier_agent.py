@@ -62,6 +62,23 @@ class SupplierAgent:
         volume_discount: float = DEFAULT_VOLUME_DISCOUNT,
     ) -> None:
         self.base_prices: Dict[str, float] = dict(base_prices or {})
+        # Post-audit round-2 (A2-22) — ``volume_free_units`` must be a
+        # strict int. Silent ``int(3.9)`` → 3 was a trap: a config that
+        # wrote ``volume_free_units: 3.9`` would behave as ``3`` without
+        # the operator being told. Fractional units of inventory don't
+        # make sense, so reject explicitly.
+        if isinstance(volume_free_units, bool) or not isinstance(volume_free_units, int):
+            try:
+                as_f = float(volume_free_units)
+            except (TypeError, ValueError):
+                raise TypeError(
+                    f"volume_free_units must be int, got {type(volume_free_units).__name__}"
+                )
+            if not as_f.is_integer():
+                raise TypeError(
+                    f"volume_free_units must be whole, got {volume_free_units!r}"
+                )
+            volume_free_units = int(as_f)
         self.volume_free_units = int(volume_free_units)
         self.volume_rate = float(volume_rate)
         self.demand_rate = float(demand_rate)
@@ -87,16 +104,21 @@ class SupplierAgent:
         negotiated quote can beat the list price — restoring economic tension
         that was missing in v2.2 where every quote was >= list price.
         """
-        # Post-audit m-5 — emit a WARNING when falling back to the generic
-        # ``FALLBACK_BASE_PRICE`` so an unknown SKU doesn't quietly get a
-        # nonsense quote based on the constant default.
+        # Post-audit m-5 / round-2 (A2-21) — emit a WARNING when falling
+        # back to a generic base price. Instead of the hard-coded module
+        # constant, prefer the mean of configured ``base_prices`` (if
+        # any) so the fallback is contextually similar to the business
+        # the policy is actually running against.
         if sku not in self.base_prices:
+            fallback = self._derive_fallback_price()
             logger.warning(
                 "supplier_quote_price_fallback sku=%s fallback=%s",
                 sku,
-                self.fallback_base_price,
+                fallback,
             )
-        base = float(self.base_prices.get(sku, self.fallback_base_price))
+            base = float(fallback)
+        else:
+            base = float(self.base_prices[sku])
         qty = max(0, int(quantity_requested))
         over_free = max(0, qty - self.volume_free_units)
         volume_premium = 1.0 + over_free * self.volume_rate
@@ -118,15 +140,37 @@ class SupplierAgent:
 
     def list_price(self, sku: str) -> float:
         """Return the unmodified list price for a SKU (no premium applied)."""
-        # Post-audit m-5 — mirror the warning emitted in ``quote_price``
-        # so either entry point makes the fallback visible in logs.
+        # Post-audit m-5 / round-2 (A2-21) — mirror the warning emitted
+        # in ``quote_price`` so either entry point surfaces the fallback,
+        # and use the same context-aware derivation.
         if sku not in self.base_prices:
+            fallback = self._derive_fallback_price()
             logger.warning(
                 "supplier_list_price_fallback sku=%s fallback=%s",
                 sku,
-                self.fallback_base_price,
+                fallback,
             )
-        return float(self.base_prices.get(sku, self.fallback_base_price))
+            return float(fallback)
+        return float(self.base_prices[sku])
+
+    def _derive_fallback_price(self) -> float:
+        """Return a contextually-sensible fallback base price.
+
+        Post-audit round-2 (A2-21) — previously the supplier fell back
+        to a hard-coded ``FALLBACK_BASE_PRICE`` (e.g. $700) whenever an
+        unknown SKU was quoted, which makes zero sense on a pharmacy
+        config where every SKU costs <$10. We now prefer the mean of
+        the live ``base_prices`` map; only if the map is empty do we
+        fall back to the module constant.
+        """
+        if self.base_prices:
+            try:
+                vals = [float(v) for v in self.base_prices.values() if float(v) > 0]
+            except (TypeError, ValueError):
+                vals = []
+            if vals:
+                return float(sum(vals) / len(vals))
+        return float(self.fallback_base_price)
 
 
 __all__ = ["SupplierAgent"]

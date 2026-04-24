@@ -119,18 +119,23 @@ def test_wait_step_observation_is_backward_compatible(fresh_app):
 
 
 def test_grader_without_reset_returns_409():
-    """Phase B.1 — /grader must not silently reset the env.
+    """Phase B.1 / post-audit round-2 (A2-9) — /grader must not silently reset the env.
 
-    We build a fresh server singleton without calling /reset, then hit
-    /grader and assert a 409. The server must also NOT have mutated state.
+    Post-audit round-2 (A2-9): ``create_app`` now captures the initial
+    observation as the implicit baseline so OpenEnv validators that hit
+    ``/grader`` before ``/reset`` succeed. The 409 still fires when the
+    baseline is explicitly cleared. We simulate the "no baseline"
+    scenario by reaching into ``app.state.commerceops`` and nulling it
+    before hitting the endpoint — matching the invariant that the 409
+    path is exercised.
     """
     from fastapi.testclient import TestClient
-    from server import app as app_module
-    from ecom_env import EcomEnv
+    from server.app import create_app
 
-    app_module.env = EcomEnv("configs/siyaani_fashion.json")
-    app_module._initial_state = None
-    client = TestClient(app_module.app)
+    app = create_app("configs/siyaani_fashion.json")
+    client = TestClient(app)
+    # Reach into the per-app state and simulate "no baseline captured".
+    app.state.commerceops["initial_state"] = None
     before = client.get("/state").json()
 
     r = client.post("/grader")
@@ -139,6 +144,24 @@ def test_grader_without_reset_returns_409():
 
     after = client.get("/state").json()
     assert before == after, "/grader call must be read-only when no baseline"
+
+
+def test_grader_succeeds_without_explicit_reset():
+    """Post-audit round-2 (A2-9) — implicit baseline on create_app."""
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+
+    app = create_app("configs/siyaani_fashion.json")
+    client = TestClient(app)
+    r = client.post("/grader")
+    # With the implicit baseline captured by create_app, /grader now
+    # succeeds even without an explicit /reset.
+    assert r.status_code == 200
+    payload = r.json()
+    assert isinstance(payload, dict)
+    assert "scores" in payload
+    assert isinstance(payload["scores"], list)
+    assert len(payload["scores"]) >= 1
 
 
 def test_oversized_body_returns_413(fresh_app):

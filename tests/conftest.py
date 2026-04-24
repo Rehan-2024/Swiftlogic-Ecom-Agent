@@ -12,6 +12,14 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Audit MEDIUM #5 — the invariant-assertion module (env/invariants.py)
+# previously advertised that "tests flip this on in conftest.py" but no
+# conftest ever did. ``setdefault`` is intentional: a caller that
+# explicitly sets the env var to "0" (to run a legacy reproducer) is
+# still respected. CI + local test runs now exercise the invariant
+# checks on every engine.step.
+os.environ.setdefault("COMMERCEOPS_ASSERT_INVARIANTS", "1")
+
 
 @pytest.fixture()
 def fresh_app():

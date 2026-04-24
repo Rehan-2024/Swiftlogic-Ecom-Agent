@@ -68,7 +68,7 @@ def test_revenue_log_mode_squashes_big_revenue():
     after = _base_state(daily_sales={"sku_a": 1000})  # revenue = 100_000
     cfg = _quiet_cfg(revenue_multiplier=0.001, revenue_mode="log")
     r = compute_step_reward({"base_reward": 0.0}, before, after, cfg)
-    # compute_step_reward rounds to 4dp, so relax tolerance accordingly.
+    # No internal 4dp rounding on the reward scalar; relax only for float noise.
     assert r == pytest.approx(0.001 * math.log1p(100_000), abs=1e-3)
 
 
@@ -241,11 +241,17 @@ def test_bankruptcy_terminal_fires_at_threshold():
 # ---------------------------------------------------------------------------
 
 def test_solvency_bonus_applied_above_threshold():
+    # Post-audit round-2 (A2-10): the bonus now requires
+    # ``base_reward > 0`` AND ``non_revenue_delta >= 0`` when action
+    # context is threaded through. We supply a productive base reward
+    # and zero daily_revenue so all bank growth counts as non-revenue.
     before = _base_state()
     after = _base_state(bank_balance=10_000.0)
     cfg = _quiet_cfg(solvency_threshold=1000.0, solvency_per_step=0.05)
-    r = compute_step_reward({"base_reward": 0.0}, before, after, cfg)
-    assert r == pytest.approx(0.05, abs=1e-6)
+    r = compute_step_reward(
+        {"base_reward": 0.1, "daily_revenue": 0.0}, before, after, cfg
+    )
+    assert r == pytest.approx(0.1 + 0.05, abs=1e-6)
 
 
 def test_solvency_bonus_not_applied_below_threshold():
@@ -265,12 +271,16 @@ def test_solvency_bonus_not_applied_below_threshold():
 # ---------------------------------------------------------------------------
 
 def test_inventory_target_bonus_fires_when_stock_at_or_above_target():
-    before = _base_state()
+    # Post-audit round-2 (A2-11): growth must be attributable. We supply
+    # ``target_sku_net_landed_units`` to represent a scheduled delivery
+    # that landed this step.
+    before = _base_state(inventory={"sku_a": 2})
     after = _base_state(inventory={"sku_a": 12})
     cfg = _quiet_cfg(inventory_target_bonus=0.05)
     ctx = {"inventory_target_sku": "sku_a", "inventory_target_units": 10}
     _, breakdown = compute_step_reward(
-        {"base_reward": 0.0}, before, after, cfg,
+        {"base_reward": 0.0, "target_sku_net_landed_units": 10},
+        before, after, cfg,
         return_breakdown=True, grader_context=ctx,
     )
     assert breakdown["inventory_target_bonus"] == pytest.approx(0.05, abs=1e-6)
@@ -319,9 +329,10 @@ def test_breakdown_sum_equals_total_exactly():
     total, bd = compute_step_reward(
         {"base_reward": 0.1}, before, after, cfg, return_breakdown=True,
     )
-    # daily_revenue is metadata, not a reward term.
-    terms = {k: v for k, v in bd.items() if k != "daily_revenue"}
-    assert round(sum(terms.values()), 4) == total
+    # daily_revenue is metadata and scale_hint (C.5) is a diagnostic string;
+    # neither is a reward term.
+    terms = {k: v for k, v in bd.items() if k not in {"daily_revenue", "scale_hint"}}
+    assert sum(terms.values()) == pytest.approx(total, rel=0, abs=1e-9)
 
 
 def test_base_reward_pass_through():

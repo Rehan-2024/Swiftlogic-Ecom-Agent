@@ -21,6 +21,7 @@
       "unit_cost": 2,
       "sell_price": 29,
       "competitor_price": 25,
+      "competitor_price_volatility": 0.01,
       "initial_stock": 9999,
       "restock_lead_days": 0,
       "demand": {
@@ -35,6 +36,7 @@
       "unit_cost": 5,
       "sell_price": 99,
       "competitor_price": 109,
+      "competitor_price_volatility": 0.015,
       "initial_stock": 9999,
       "restock_lead_days": 0,
       "demand": {
@@ -49,6 +51,7 @@
       "unit_cost": 30,
       "sell_price": 499,
       "competitor_price": 599,
+      "competitor_price_volatility": 0.02,
       "initial_stock": 9999,
       "restock_lead_days": 0,
       "demand": {
@@ -69,12 +72,15 @@
     "urgency_weights": [0.45, 0.35, 0.20],
     "urgency_age_threshold_days": 2,
     "refund_amount_range": [29, 499],
-    "resolved_retention_days": 7
+    "resolved_retention_days": 7,
+    "stockout_churn_multiplier": 0.0
   },
 
   "actions": {
     "allowed": ["restock", "refund", "ad_spend", "negotiate", "wait", "set_price"],
     "ad_spend_max_per_step": 2000,
+    "ad_spend_min_per_step": 25,
+    "max_ad_multiplier": 6.0,
     "price_min_mult_competitor": 0.4,
     "price_max_mult_competitor": 3.0
   },
@@ -93,6 +99,7 @@
     "restock_success": 0.05,
     "refund_success": 0.3,
     "ad_roi_positive": 0.2,
+    "ad_roi_scaled": true,
     "negotiate": 0.0,
     "wait": 0.0,
     "invalid_action": -0.2,
@@ -107,7 +114,10 @@
     "stockout_transition_grace": true,
     "bank_balance_delta_weight": 0.02,
     "revenue_mode": "log",
-    "inventory_target_bonus": 0.0
+    "revenue_cap_per_step": 3.0,
+    "inventory_target_bonus": 0.0,
+    "ticket_aging_penalty_cap": 6,
+    "set_price": 0.0
   },
 
   "graders": {

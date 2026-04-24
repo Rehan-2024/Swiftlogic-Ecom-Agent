@@ -25,7 +25,7 @@ import os
 import warnings
 from typing import Annotated, Dict, List, Literal, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 from env import constants
 from env.world_engine import WorldEngine
@@ -35,10 +35,54 @@ from env.ticket_system import generate_episode_tickets  # re-export for compat
 # ---------------------------------------------------------------------------
 # Default config path (can be overridden via env var for tests/demo)
 # ---------------------------------------------------------------------------
+# Canonical (non-demo) default. ``DEFAULT_CONFIG_PATH`` is preserved as a
+# module-level attribute for backwards compatibility with external
+# callers that import it; the active default is re-resolved dynamically
+# in ``_resolve_default_config_path`` so toggling ``COMMERCEOPS_DEMO_MODE``
+# or ``COMMERCEOPS_CONFIG`` at runtime takes effect on the next
+# ``EcomEnv()`` construction (the audit flagged the old import-time
+# freeze as a bug).
 
-DEFAULT_CONFIG_PATH = os.environ.get(
-    "COMMERCEOPS_CONFIG", "configs/siyaani_fashion.json"
-)
+_DEFAULT_BASELINE_CONFIG = "configs/siyaani_fashion.json"
+_DEFAULT_DEMO_CONFIG = "configs/siyaani_fashion_demo.json"
+_DEMO_MODE_ENV = "COMMERCEOPS_DEMO_MODE"
+_CONFIG_ENV = "COMMERCEOPS_CONFIG"
+_DEMO_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _demo_mode_enabled() -> bool:
+    """Return True when ``COMMERCEOPS_DEMO_MODE`` is explicitly truthy."""
+    return str(os.environ.get(_DEMO_MODE_ENV, "")).strip().lower() in _DEMO_TRUTHY
+
+
+def _resolve_default_config_path() -> str:
+    """Pick the active default config at construction time.
+
+    Resolution precedence (highest → lowest):
+    1. ``COMMERCEOPS_CONFIG`` — explicit override (unchanged from v2.3.x).
+    2. ``COMMERCEOPS_DEMO_MODE`` truthy and the demo config file exists on
+       disk → ``configs/siyaani_fashion_demo.json``.
+    3. ``configs/siyaani_fashion.json`` — canonical shipping default.
+
+    Kept as a function (not a bare module constant) so tests and the
+    server's ``/config`` hot-swap flow see fresh values when the env
+    vars are flipped mid-process.
+    """
+    override = os.environ.get(_CONFIG_ENV)
+    if override:
+        return override
+    if _demo_mode_enabled():
+        try:
+            from pathlib import Path as _Path
+            if _Path(_DEFAULT_DEMO_CONFIG).exists():
+                return _DEFAULT_DEMO_CONFIG
+        except Exception:
+            # Filesystem errors are non-fatal; fall through to the baseline.
+            pass
+    return _DEFAULT_BASELINE_CONFIG
+
+
+DEFAULT_CONFIG_PATH = _resolve_default_config_path()
 
 
 # ---------------------------------------------------------------------------
@@ -46,14 +90,43 @@ DEFAULT_CONFIG_PATH = os.environ.get(
 # ---------------------------------------------------------------------------
 
 class Ticket(BaseModel):
+    # Post-audit L-14 — silently drop unknown ticket fields (e.g. forks
+    # that add ``notes`` or ``priority``) so the adapter layer doesn't
+    # explode on observation coercion. The internal engine dict shape is
+    # the single source of truth; the Pydantic model is a projection.
+    model_config = ConfigDict(extra="ignore")
+
     ticket_id: str
     issue_type: str
     status: str
     urgency: str = "normal"
     created_day: int = 1
+    # Post-audit round-2 (A2-33) — optional SKU tag. Tickets generated
+    # when ``tickets.ticket_issue_bias_by_sku=True`` carry the SKU that
+    # most likely caused the issue (e.g. a stockout-linked churn
+    # ticket). Defaulted to ``None`` so every existing client keeps
+    # deserialising cleanly.
+    sku: Optional[str] = None
 
 
 class EcomObservation(BaseModel):
+    # Post-audit L-14 — ignore unknown fields on the observation payload.
+    # The WorldEngine state dict accumulates private bookkeeping keys
+    # (e.g. ``supplier_quoted_qty``, ``pending_deliveries``, ``reward``,
+    # ``done``) that the observation model doesn't need to surface; the
+    # default "extra=allow" behaviour would pass them through, while
+    # "extra=forbid" would break on any new key added to state. Pinning
+    # to "ignore" makes the model stable against state-shape evolution.
+    model_config = ConfigDict(extra="ignore")
+
+    # Post-audit round-2 (A2-16) — ``current_day`` is the calendar day
+    # that will be *played next*, not the day whose sales were just
+    # booked. The sync ``_simulate_day`` in WorldEngine books revenue
+    # against ``current_day`` and then advances it by 1, so the
+    # observation returned from ``/step`` sees the incremented value.
+    # The derived field ``current_day_played`` (= ``current_day - 1``)
+    # is provided below for client clarity; existing clients that
+    # only read ``current_day`` keep their exact behaviour.
     current_day: int
     step_count: int
     bank_balance: float
@@ -62,6 +135,12 @@ class EcomObservation(BaseModel):
     active_tickets: List[Ticket]
     daily_sales: Dict[str, int]
     active_ad_spend: Dict[str, float]
+
+    # Derived, defaulted field (A2-16). ``current_day_played`` surfaces
+    # the day whose sales are represented by ``daily_sales`` /
+    # ``daily_revenue``. Set from ``_wrap_state``; defaulted here so
+    # older serialised observations still load.
+    current_day_played: int = 0
 
     # CommerceOps v2 additions (all defaulted for backwards compatibility).
     current_week: int = 0
@@ -73,6 +152,8 @@ class EcomObservation(BaseModel):
     # re-deriving from ``daily_sales`` * ``prices``. Defaulted to ``0.0``
     # for wire compatibility with older serialised observations.
     daily_revenue: float = 0.0
+    # Optional simple bounded scalar representing customer sentiment.
+    customer_satisfaction: float = 1.0
     supplier_quotes: Dict[str, float] = Field(default_factory=dict)
     # Per-SKU ``step_count`` at which the paired supplier quote goes stale.
     # Exposing this alongside ``supplier_quotes`` lets a policy reason about
@@ -180,12 +261,23 @@ def _build_grader_context(config: Dict) -> Dict[str, object]:
     graders = config.get("graders", {}) if isinstance(config, dict) else {}
     profit_cfg = graders.get("profit_task", {}) if isinstance(graders, dict) else {}
     inv_cfg = graders.get("inventory_task", {}) if isinstance(graders, dict) else {}
+    triage_cfg = graders.get("triage_task", {}) if isinstance(graders, dict) else {}
+    # Post-audit round-2 (A2-34) — triage sku_match_bonus is optional
+    # and clamped to ``[0, 0.1]``. Reading it into the context cache
+    # keeps the grader function pure (no config lookup) and lets
+    # external callers introspect the active value.
+    try:
+        triage_bonus = float(triage_cfg.get("sku_match_bonus", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        triage_bonus = 0.0
+    triage_bonus = max(0.0, min(0.1, triage_bonus))
     return {
         "profit_normalizer": float(
             profit_cfg.get("normalizer", constants.DEFAULT_PROFIT_NORMALIZER)
         ),
         "inventory_target_sku": str(inv_cfg.get("target_sku", "cotton_set")),
         "inventory_target_units": float(inv_cfg.get("target_units", 10)),
+        "triage_sku_match_bonus": triage_bonus,
     }
 
 
@@ -200,6 +292,38 @@ def _refresh_grader_context(config: Dict) -> Dict[str, object]:
     return ctx
 
 
+def _strict_grader_context_enabled() -> bool:
+    """Return True if ``COMMERCEOPS_STRICT_GRADER_CONTEXT`` is truthy.
+
+    Read at call-time (not import-time) so tests can toggle the flag via
+    ``monkeypatch.setenv`` without reloading the module.
+    """
+    return os.environ.get("COMMERCEOPS_STRICT_GRADER_CONTEXT", "") in {"1", "true", "yes"}
+
+
+def _warn_or_raise_missing_grader_context(fn_name: str) -> None:
+    """Emit a ``DeprecationWarning`` (or ``RuntimeError`` in strict mode)
+    when a grader is called without an explicit ``context=`` kwarg.
+
+    v2.3.x Phase A.2 — the module-level ``_GRADER_CONTEXT`` mirror is still
+    consulted for backward compatibility with the pre-v2.3 server, but the
+    warning now nudges callers toward ``context=env.grader_context`` and
+    ships an opt-in strict flag so CI can fail loudly. The warning uses
+    ``stacklevel=3`` so the traceback points at the real caller (through
+    this helper + the grader function) rather than at this module.
+    """
+    message = (
+        f"Calling {fn_name} without an explicit context= kwarg is "
+        "deprecated; pass context=env.grader_context to bind the per-env "
+        "grader state. The module-level _GRADER_CONTEXT mirror will be "
+        "removed in v2.4. Set COMMERCEOPS_STRICT_GRADER_CONTEXT=1 to fail "
+        "fast on this path today."
+    )
+    if _strict_grader_context_enabled():
+        raise RuntimeError(message)
+    warnings.warn(message, DeprecationWarning, stacklevel=3)
+
+
 # ---------------------------------------------------------------------------
 # EcomEnv adapter
 # ---------------------------------------------------------------------------
@@ -212,7 +336,13 @@ class EcomEnv:
     compatibility); pass ``config_path`` to load a different business.
     """
 
-    def __init__(self, config_path: str = DEFAULT_CONFIG_PATH):
+    def __init__(self, config_path: Optional[str] = None):
+        # Post-audit: resolve the default at construction time (not at
+        # module import) so flipping ``COMMERCEOPS_DEMO_MODE`` or
+        # ``COMMERCEOPS_CONFIG`` after ``ecom_env`` has been imported
+        # still takes effect on the next ``EcomEnv()`` instance.
+        if config_path is None:
+            config_path = _resolve_default_config_path()
         self.world_engine: WorldEngine = WorldEngine(config_path)
         # Each EcomEnv owns its grader context; we also mirror it to the
         # module-level singleton so bare ``grade_*`` imports keep working.
@@ -223,7 +353,43 @@ class EcomEnv:
 
     # -- Seeding --------------------------------------------------------
     def seed(self, seed: int) -> None:
-        self.world_engine.reset(seed=int(seed))
+        """Reseed the per-env RNGs WITHOUT wiping state.
+
+        Post-audit round-2 (A2-2) — previously ``seed`` proxied to
+        ``world_engine.reset``, which also cleared inventory, bank
+        balance, tickets, etc. Gymnasium-style harnesses that issue
+        ``env.seed(42)`` mid-episode expected a no-mutation reseed;
+        the old shape silently wiped their state.
+
+        Calls ``WorldEngine.reseed`` (a new method that touches only
+        ``_py_rng`` and ``_np_rng``). Callers who want the old
+        seed-and-reset behaviour should call ``env.reset(seed=...)``
+        explicitly.
+        """
+        if hasattr(self.world_engine, "reseed"):
+            self.world_engine.reseed(int(seed))
+        else:
+            # Defensive fallback for engines predating ``reseed``.
+            self.world_engine.reset(seed=int(seed))
+
+    # -- Graders helper -------------------------------------------------
+    def graders(self):
+        """Return a dict of grader callables pre-bound to ``self.grader_context``.
+
+        Post-audit round-2 (A2-1) — callers (``inference.py``, the
+        server's ``/grader`` route, external test harnesses) previously
+        had to pass ``env.grader_context`` on every call; forgetting it
+        silently fell back to the deprecated module-level mirror
+        (``_GRADER_CONTEXT``). The helper centralises the wiring so the
+        mirror can be removed in a future release without chasing every
+        caller.
+        """
+        ctx = self.grader_context
+        return {
+            "triage_task": lambda i, f: grade_triage_task(i, f, context=ctx),
+            "inventory_task": lambda i, f: grade_inventory_task(i, f, context=ctx),
+            "profit_task": lambda i, f: grade_profit_task(i, f, context=ctx),
+        }
 
     # -- Config hot-swap ------------------------------------------------
     def load_config(self, config_path: str, seed: Optional[int] = None) -> EcomObservation:
@@ -240,12 +406,19 @@ class EcomEnv:
 
     # -- Step -----------------------------------------------------------
     def step(self, action) -> Tuple[EcomObservation, EcomReward, bool, Dict]:
+        # Post-audit round-2 (A2-6) — direct (non-HTTP) callers of
+        # ``EcomEnv.step`` must hit the same discriminated-union
+        # validation path as the ``/step`` route. Previously a raw dict
+        # with an unknown ``action_type`` slipped straight through to
+        # ``WorldEngine.step``, which surfaced as a generic
+        # ``unknown_action`` inside the info dict instead of a clean
+        # Pydantic ``ValidationError`` the caller can introspect.
         if hasattr(action, "root"):
             action = action.root
         if hasattr(action, "model_dump"):
             action_dict = action.model_dump()
         elif isinstance(action, dict):
-            action_dict = action
+            action_dict = EcomAction.model_validate(action).root.model_dump()
         else:
             action_dict = {"action_type": "wait"}
 
@@ -259,11 +432,42 @@ class EcomEnv:
 
     # -- Framework compatibility (OpenEnv v0.2.3) -----------------------
     async def reset_async(self, seed=None, **kwargs):
+        """Async wrapper over :meth:`reset` provided for OpenEnv compatibility.
+
+        .. note:: Audit MINOR #17 — this wrapper is ``async`` for
+           protocol conformance only; the underlying ``reset`` is a
+           synchronous, CPU-bound call that does *not* yield to the
+           event loop. In a single-worker Uvicorn deployment that's
+           fine (the framework already serialises requests). If you
+           host multiple envs inside the same event loop and require
+           non-blocking behaviour, wrap this call in
+           ``asyncio.to_thread`` at the caller.
+        """
         return self.reset(seed=seed)
 
     async def step_async(self, action, **kwargs):
-        obs, _reward, _done, _info = self.step(action)
-        return obs
+        """Async wrapper over ``step``.
+
+        Post-audit M-1 — previously this method returned the observation
+        only, silently discarding the reward, ``done`` flag, and ``info``.
+        OpenEnv v0.2.3 async harnesses that awaited ``step_async`` never
+        saw terminal signals and could run past ``done=True`` unnoticed.
+        The wrapper now returns the full ``(obs, reward, done, info)``
+        tuple, matching the sync ``step`` contract. Legacy callers that
+        only destructured the first element keep working because Python
+        tuples unpack positionally.
+
+        .. note:: Audit MINOR #17 — ``step_async`` is not actually
+           non-blocking. ``WorldEngine.step`` executes the full
+           day-simulation synchronously while holding the event loop.
+           This is intentional: the single-worker server topology
+           serialises ``/step`` calls under ``state["lock"]`` anyway,
+           so a real ``await`` would add scheduling overhead without
+           any throughput win. Callers running multiple ``EcomEnv``s
+           in a shared event loop should wrap this in
+           ``asyncio.to_thread`` to restore parallelism.
+        """
+        return self.step(action)
 
     def close(self):
         pass
@@ -297,6 +501,31 @@ class EcomEnv:
                     projected[str(sku)] = clean
         obs_input = dict(raw)
         obs_input["pending_orders_schedule"] = projected
+        # Post-audit round-2 (A2-16) — surface the day whose sales are
+        # reflected in ``daily_sales`` / ``daily_revenue``. ``current_day``
+        # is already ``play-next``; ``current_day_played`` is ``current_day - 1``,
+        # clamped at 0 for the initial reset observation where no day
+        # has been played yet.
+        try:
+            cd_next = int(obs_input.get("current_day", 0))
+        except (TypeError, ValueError):
+            cd_next = 0
+        obs_input["current_day_played"] = max(0, cd_next - 1)
+        # Audit MINOR #12 — the engine keeps competitor prices in full
+        # precision in state (A2-47) so a long episode doesn't compound
+        # ``round(x, 2)`` drift. Agent prices, in contrast, are rounded
+        # to 2 dp on ``do_set_price``. That asymmetry leaks into the
+        # observation: one SKU reports ``1799.99874...`` while another
+        # reports ``1800.00``. We harmonise on serialisation only — the
+        # internal float is preserved for the next day's drift.
+        for _key in ("prices", "competitor_prices"):
+            _raw_map = obs_input.get(_key)
+            if isinstance(_raw_map, dict):
+                obs_input[_key] = {
+                    str(sku): round(float(val), 2)
+                    for sku, val in _raw_map.items()
+                    if isinstance(val, (int, float))
+                }
         return EcomObservation(**obs_input)
 
 
@@ -308,23 +537,36 @@ def grade_triage_task(
     initial_state: EcomObservation,
     final_state: EcomObservation,
     *,
-    context: Optional[Dict[str, object]] = None,  # unused, present for API symmetry
+    context: Optional[Dict[str, object]] = None,
 ) -> float:
     """Ratio of resolved tickets to total tickets (initial + spawned).
 
     v2.3 Phase 4.4 — when an episode genuinely has no tickets (which the
     validator now flags as a likely config bug, but still permits), we
     return the neutral ``0.5`` rather than the near-perfect ``0.99``.
-    Crediting the agent almost-full score for doing nothing on an empty
-    ticket queue was a freebie that distorted training signals on exotic
-    configs with ``min_initial=0, spawn_rate_per_day=0``.
+
+    Post-audit round-2 (A2-34) — if the context supplies a non-zero
+    ``triage_sku_match_bonus`` (clamped to ``[0, 0.1]``) the base ratio
+    is bumped when any resolved ticket carries an ``sku`` tag, since
+    that implies the policy's refund targeted a specific problem SKU.
+    Bonus is capped so a single match can never push the grade past
+    the clamped 0.99 ceiling.
     """
     tickets = final_state.active_tickets or []
     if not tickets:
         return 0.5
-    resolved = sum(1 for t in tickets if t.status == "resolved")
-    ratio = resolved / len(tickets)
-    return max(0.01, min(0.99, ratio))
+    resolved_tickets = [t for t in tickets if t.status == "resolved"]
+    ratio = len(resolved_tickets) / len(tickets)
+    bonus = 0.0
+    if context is not None:
+        try:
+            bonus_cfg = float(context.get("triage_sku_match_bonus", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            bonus_cfg = 0.0
+        bonus_cfg = max(0.0, min(0.1, bonus_cfg))
+        if bonus_cfg > 0 and any(getattr(t, "sku", None) for t in resolved_tickets):
+            bonus = bonus_cfg
+    return max(0.01, min(0.99, ratio + bonus))
 
 
 def grade_inventory_task(
@@ -340,16 +582,7 @@ def grade_inventory_task(
     harnesses avoid racing on shared global state.
     """
     if context is None:
-        # Post-audit m-6 — relying on the shared module mirror is racy once
-        # more than one EcomEnv lives in the same process. Emit a
-        # ``DeprecationWarning`` so callers migrate to ``context=``.
-        warnings.warn(
-            "Calling grade_inventory_task without an explicit context= kwarg "
-            "is deprecated; pass context=env.grader_context. The module-level "
-            "_GRADER_CONTEXT mirror will be removed in v2.4.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        _warn_or_raise_missing_grader_context("grade_inventory_task")
     ctx = context if context is not None else _GRADER_CONTEXT
     target_sku = str(ctx.get("inventory_target_sku", "cotton_set"))
     target_units = float(ctx.get("inventory_target_units", 10)) or 1.0
@@ -371,14 +604,7 @@ def grade_profit_task(
     v2 / alternate business configs.
     """
     if context is None:
-        # Post-audit m-6 — see ``grade_inventory_task`` for the rationale.
-        warnings.warn(
-            "Calling grade_profit_task without an explicit context= kwarg "
-            "is deprecated; pass context=env.grader_context. The module-level "
-            "_GRADER_CONTEXT mirror will be removed in v2.4.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        _warn_or_raise_missing_grader_context("grade_profit_task")
     ctx = context if context is not None else _GRADER_CONTEXT
     profit = final_state.bank_balance - initial_state.bank_balance
     configured = float(ctx.get("profit_normalizer", constants.DEFAULT_PROFIT_NORMALIZER))

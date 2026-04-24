@@ -216,10 +216,12 @@ def test_reward_breakdown_sum_matches_total(world):
     """
     _s, reward, _d, info = world.step({"action_type": "wait"})
     bd = info.get("reward_breakdown", {})
-    # ``daily_revenue`` is a passthrough scalar, not a shaping term; exclude
-    # it from the sum so we only compare actual reward components.
-    term_sum = sum(v for k, v in bd.items() if k != "daily_revenue")
-    assert abs(round(term_sum, 4) - reward) < 1e-3, (term_sum, reward, bd)
+    # ``daily_revenue`` is a passthrough scalar and ``scale_hint`` is a
+    # diagnostic string (post-audit C.5). Both are excluded so the sum
+    # only covers actual shaping terms.
+    _NON_TERM_KEYS = {"daily_revenue", "scale_hint"}
+    term_sum = sum(v for k, v in bd.items() if k not in _NON_TERM_KEYS)
+    assert abs(term_sum - reward) < 1e-6, (term_sum, reward, bd)
 
 
 def test_inventory_target_bonus_visible_in_reward_breakdown(world):
@@ -234,4 +236,7 @@ def test_inventory_target_bonus_visible_in_reward_breakdown(world):
     _s, _r, _d, info = world.step({"action_type": "wait"})
     bd = info.get("reward_breakdown", {})
     assert "inventory_target_bonus" in bd
-    assert bd["inventory_target_bonus"] == round(bonus, 4) or bd["inventory_target_bonus"] == 0.0
+    assert (
+        abs(bd["inventory_target_bonus"] - bonus) < 1e-9
+        or bd["inventory_target_bonus"] == 0.0
+    )

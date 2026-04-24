@@ -1,11 +1,13 @@
 {
-  "business_id": "siyaani_fashion",
-  "display_name": "Siyaani Ethnic Wear",
+  "business_id": "siyaani_fashion_demo",
+  "display_name": "Siyaani Ethnic Wear (Demo)",
   "currency": "INR",
+  "_notes": "Demo profile with every Tier-1 realism feature enabled. Identical economics to siyaani_fashion.json plus reactive competitor, market shocks, customer satisfaction, supplier capacity, and inventory holding cost. Use by setting COMMERCEOPS_DEMO_MODE=1 or COMMERCEOPS_CONFIG=configs/siyaani_fashion_demo.json.",
 
   "financials": {
     "initial_bank_balance": 50000,
-    "bankruptcy_threshold": 0
+    "bankruptcy_threshold": 0,
+    "inventory_holding_cost_per_unit_per_day": 0.5
   },
 
   "episode": {
@@ -106,7 +108,38 @@
     "price_cap_multiplier": 2.5,
     "volume_discount": 0.08,
     "spot_premium": 0.08,
-    "quote_expiry_steps": 3
+    "quote_expiry_steps": 3,
+    "capacity_per_sku": {
+      "silk_kurta": 40,
+      "cotton_set": 60,
+      "linen_dupatta": 30,
+      "silk_saree": 15
+    }
+  },
+
+  "competitor": {
+    "reactive_enabled": true,
+    "reactive_undercut_multiplier": 0.98,
+    "reactive_follow_up_multiplier": 1.01,
+    "reactive_deadzone_multiplier": 0.02
+  },
+
+  "market": {
+    "shock_enabled": true,
+    "shock_probability": 0.08,
+    "shock_min_multiplier": 0.8,
+    "shock_max_multiplier": 1.4,
+    "shock_duration_days": 2
+  },
+
+  "customer": {
+    "satisfaction_enabled": true,
+    "satisfaction_initial": 1.0,
+    "satisfaction_min": 0.4,
+    "satisfaction_max": 1.0,
+    "stockout_penalty": 0.03,
+    "open_ticket_penalty": 0.002,
+    "daily_recovery": 0.01
   },
 
   "rewards": {

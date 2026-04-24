@@ -375,3 +375,127 @@ def test_bankruptcy_threshold_single_source_financials_only(tmp_path):
     )
     w = WorldEngine(path)
     assert "bankruptcy_threshold" not in w.config["rewards"]
+
+
+# ---------------------------------------------------------------------------
+# Post-audit B.1 (v2.3.x) — price bound consistency
+# ---------------------------------------------------------------------------
+
+def test_inverted_price_bounds_raise(tmp_path):
+    """``price_min_mult_competitor > price_max_mult_competitor`` is a
+    config-time bug (the feasible SetPrice interval becomes empty). The
+    validator must raise so operators notice before a training run starts.
+    """
+    path = _write_cfg(
+        tmp_path,
+        {
+            "actions.price_min_mult_competitor": 2.5,
+            "actions.price_max_mult_competitor": 1.0,
+        },
+    )
+    with pytest.raises(ConfigValidationError, match="price_min_mult_competitor"):
+        WorldEngine(path)
+
+
+def test_non_positive_price_bounds_raise(tmp_path):
+    path = _write_cfg(
+        tmp_path,
+        {"actions.price_min_mult_competitor": 0},
+    )
+    with pytest.raises(ConfigValidationError, match="price_min_mult_competitor"):
+        WorldEngine(path)
+
+
+def test_non_numeric_price_bounds_raise(tmp_path):
+    path = _write_cfg(
+        tmp_path,
+        {"actions.price_min_mult_competitor": "cheap"},
+    )
+    with pytest.raises(ConfigValidationError, match="numeric"):
+        WorldEngine(path)
+
+
+def test_equal_price_bounds_load(tmp_path):
+    """``min == max`` is a degenerate but valid fixed-price config; it
+    must load so operators can intentionally pin the policy to a single
+    price multiplier for A/B testing.
+    """
+    path = _write_cfg(
+        tmp_path,
+        {
+            "actions.price_min_mult_competitor": 1.0,
+            "actions.price_max_mult_competitor": 1.0,
+        },
+    )
+    w = WorldEngine(path)
+    actions_cfg = w.config.get("actions", {})
+    assert actions_cfg["price_min_mult_competitor"] == 1.0
+    assert actions_cfg["price_max_mult_competitor"] == 1.0
+
+
+def test_competitor_reactive_enabled_must_be_boolean(tmp_path):
+    path = _write_cfg(tmp_path, {"competitor.reactive_enabled": "yes"})
+    with pytest.raises(ConfigValidationError, match="reactive_enabled"):
+        WorldEngine(path)
+
+
+def test_supplier_capacity_map_requires_non_negative_ints(tmp_path):
+    path = _write_cfg(tmp_path, {"supplier.capacity_per_sku": {"widget": -1}})
+    with pytest.raises(ConfigValidationError, match="capacity_per_sku"):
+        WorldEngine(path)
+
+
+def test_market_shock_probability_in_range(tmp_path):
+    path = _write_cfg(tmp_path, {"market.shock_probability": 1.5})
+    with pytest.raises(ConfigValidationError, match="shock_probability"):
+        WorldEngine(path)
+
+
+def test_customer_satisfaction_bounds_valid(tmp_path):
+    path = _write_cfg(
+        tmp_path,
+        {"customer.satisfaction_min": 0.9, "customer.satisfaction_max": 0.5},
+    )
+    with pytest.raises(ConfigValidationError, match="satisfaction bounds"):
+        WorldEngine(path)
+
+
+# ---------------------------------------------------------------------------
+# Post-audit B.2 (v2.3.x) — financials numeric validation
+# ---------------------------------------------------------------------------
+
+def test_non_numeric_bankruptcy_threshold_raises(tmp_path):
+    path = _write_cfg(
+        tmp_path,
+        {
+            "financials.bankruptcy_threshold": "broke",
+            # Drop the rewards mirror so the cross-key equality check
+            # doesn't short-circuit before we reach _validate_financials.
+            "rewards.bankruptcy_threshold": _DELETE,
+        },
+    )
+    with pytest.raises(ConfigValidationError, match="bankruptcy_threshold"):
+        WorldEngine(path)
+
+
+def test_initial_below_bankruptcy_threshold_warns_but_loads(tmp_path, caplog):
+    """Soft warning: the engine must not reject a config where the agent
+    starts below the bankruptcy floor — it's a legitimate (if exotic)
+    stress-test configuration. Loud WARNING + successful load is the
+    contract.
+    """
+    import logging
+
+    path = _write_cfg(
+        tmp_path,
+        {
+            "financials.initial_bank_balance": 50,
+            "financials.bankruptcy_threshold": 100,
+            "rewards.bankruptcy_threshold": 100,
+        },
+    )
+    with caplog.at_level(logging.WARNING, logger="commerceops.world_engine"):
+        w = WorldEngine(path)
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("config_soft_warn" in m for m in messages), messages
+    assert w.config["financials"]["initial_bank_balance"] == 50

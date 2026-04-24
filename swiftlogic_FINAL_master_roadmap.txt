@@ -1,553 +1,0 @@
-﻿
-SWIFTLOGIC COMMERCEOPS v2
-GRAND FINALE MASTER ROADMAP
-Meta × PyTorch × OpenEnv × Scaler School of Technology Hackathon
-25-26 April 2026  |  Electronic City, Bangalore
-Team: Mohd Rehan · Prayash Raj Mishra · Anirudh Pratap Singh Yadav
-VERDICT
-Keep & UpgradePRIMARY THEME
-#3 World ModelingWIN FORMULA
-Upgrade + Train + Demo
-
-
-Section 0: AI Report Cross-Analysis
-Three AI models reviewed your project. Here is the synthesis - what each got right, what to borrow, and the final verdict.
-
-AI ModelWhat It Got RightWhat It MissedBorrow ThisClaudeMost thorough. Correct verdict. Day-by-day plan. Identified training script as CRITICAL gap. Strong Q&A prep. Team role division.Conservative on multi-agent (frames Supplier as 'optional'). No ready-to-run code.Day-by-day execution plan, Q&A answers, storytelling arc, team role division, pitch structure.GPTBest code quality. Ready-to-run GRPO Colab script. Clean system architecture. Correct multi-agent supplier design. Dense reward math.Warns about multi-agent as 'trap' then recommends it anyway. Missing blog/video task ownership.Stochastic demand code, GRPO training script, reward function formula, architecture diagram.GeminiBest narrative. 'Level 1 to Level 10' metaphor is pitch-ready. Correctly identifies Meta's WhatsApp Business SMB interest.No code. Vague on TRL specifics. 'Add NegotiateAction in 6 hours' underestimates effort.Narrative language: 'living breathing economy', learning curve story, '400% profit increase' demo framing.
-SYNTHESIS VERDICT: All three AI models agree - DO NOT switch problem statements. Supplier Agent treated as Phase 3 - build ONLY after training pipeline is secured. This roadmap synthesizes the best of all three reports.
-
-
-Section A: Problem Statement
-A.1 Official Round 2 Submission
-TitleSwiftlogic CommerceOps v2: Autonomous AI Startup Operator in a Dynamic E-Commerce EconomyPrimary ThemeTheme #3 - World Modeling (Professional Tasks) + Scaler AI Labs Bonus PrizeSecondary ThemesTheme #2 - Long-Horizon Planning | Theme #4 - Self-Improving Agents | Theme #1 - Multi-Agent (Phase 3)Brand/ScenarioSiyaani - an ethnic wear fashion brand operating a digital storefront in a volatile, partially observable market
-A.2 The Big Question
-Can an autonomous LLM-based AI agent learn to operate a fashion e-commerce startup - managing inventory, resolving customer crises, allocating ad spend, and setting prices - over a 50-day business cycle, improving its decisions through GRPO reinforcement learning until it can run the business profitably without human intervention?
-A.3 Theme Alignment Scorecard
-ThemeAlignmentBeforeAfterTheme #3 - World Modeling (Primary)PERFECT. E-commerce is a dynamic professional world with financial constraints, inventory state, customer SLAs, and supply chain causality.9/1010/10Scaler AI Labs BonusDIRECT. Siyaani as an enterprise with financial rules, SLA on tickets, and inventory targets is exactly the bonus prize definition.8/1010/10Theme #2 - Long-Horizon Planning50-step episodes with sparse delayed rewards require multi-week business planning.4/108/10Theme #4 - Self-Improvement3-tier curriculum (Easy→Hard) + GRPO training = agent that improves its own policy.3/108/10Theme #1 - Multi-AgentSupplier Agent negotiating wholesale prices adds theory-of-mind and strategic interaction. Phase 3 only.2/107/10
-
-
-Section B: What You Have vs What You Need
-B.1 What You Already Have - Do NOT Rebuild
-ComponentStatusQuality AssessmentOpenEnv v0.2.3 compliant environmentDONEProduction-grade. Passes automated validator. Zero compliance risk.FastAPI server - 6 endpoints (/reset /step /state /tasks /grader /health)DONEClean. Dual JSON format. Health checks. Works.Docker + HuggingFace Spaces deployment (live URL)DONEJudges can hit it right now. Huge advantage.Pydantic v2 discriminated union action parsingDONEPrevents hallucinated actions from crashing.3-tier grading (Easy/Medium/Hard) with (0.01, 0.99) scoresDONEPhase 2 Deep Validation compliant.Deterministic seeding (seed=42)DONEResearch-grade reproducibility.LLM inference pipeline (inference.py)DONEFunctional. Needs minor fixes.Baseline performance data (Mistral-7B zero-shot: 0.99/0.40/0.10)DONEPerfect before/after story setup.
-B.2 Critical Gaps - Must Fix or Lose
-CRITICAL: These are NOT optional improvements. These are the difference between top 6 and going home.
-GapImpactFix RequiredDayNo training script (TRL/Unsloth)DISQUALIFICATION RISK - mandatory minimum requirementBuild GRPO Colab notebook. Get it running against /step.Day 3No reward improvement curve0/20 on 'Showing Improvement'. Your strongest story tool.200 GRPO episodes → CSV log → Matplotlib chart.Day 3RestockAction does not deduct bank_balanceProfit task is meaningless. Judges WILL notice.bank_balance -= unit_cost * quantity in step logic.Day 1Only 1 static ticket (TKT-001)Triage is trivially solvable. Environment Innovation suffers.Generate 3-5 random tickets per reset with urgency levels.Day 110-step episode horizonToo short for Long-Horizon claim. Curves can't develop.Extend to 50 steps. Add current_week field.Day 1inference.py runs only 5/10 stepsArtificially low baseline. Wastes environment.Change loop range to 50 steps.Day 1No HuggingFace blog postMinimum requirement. Missing = incomplete submission.500-word post with reward curve. Prayash owns.Day 4No YouTube video (<2 min)Minimum requirement. Missing = incomplete submission.Record Loom: live agent + reward curve + narration.Day 4
-
-
-STEP 1: Fix Core Environment (Phase 1 - Day 1)
-Execute Phase 1 FIRST. These are bugs that make your environment technically wrong. Training in Phase 2 depends on correct physics.
-Phase 1, Task 1 - Fix RestockAction Financial Mechanics
-In ecom_env.py, find the RestockAction handler in step(). Add cost deduction:
-
-# BEFORE (broken - restock is free, profit task is meaningless):
-if action.action_type == 'restock':
-    self.state.inventory[action.sku] += action.quantity
-    reward = 0.1
-
-# AFTER (correct - restock costs money):
-UNIT_COSTS = {'silk_kurta': 80, 'cotton_set': 50, 'linen_dupatta': 60, 'silk_saree': 120}
-if action.action_type == 'restock':
-    cost = UNIT_COSTS.get(action.sku, 70) * action.quantity
-    if self.state.bank_balance < cost:
-        reward = -0.2  # can't afford it
-    else:
-        self.state.bank_balance -= cost
-        self.state.inventory[action.sku] += action.quantity
-        reward = 0.1
-Phase 1, Task 2 - Fix Episode Length (10 → 50 steps)
-# BEFORE:
-done = self.state.step_count >= 10
-
-# AFTER:
-done = self.state.step_count >= 50 or self.state.bank_balance <= 0
-self.state.current_week = self.state.current_day // 7  # add to observation
-Phase 1, Task 3 - Replace Static Single Ticket with Dynamic Generator
-# BEFORE:
-active_tickets=[Ticket(ticket_id='TKT-001', issue_type='refund', status='open')]
-
-# AFTER - ticket_system.py (new file):
-import random
-TICKET_TYPES = ['refund', 'damage', 'delay', 'wrong_item']
-URGENCY_LEVELS = ['normal', 'urgent', 'critical']
-
-def generate_episode_tickets(num=None):
-    n = num or random.randint(3, 5)
-    return [Ticket(
-        ticket_id=f'TKT-{i+1:03d}',
-        issue_type=random.choice(TICKET_TYPES),
-        urgency=random.choices(URGENCY_LEVELS, weights=[0.5,0.35,0.15])[0],
-        status='open', created_day=1
-    ) for i in range(n)]
-
-# In ecom_env.py reset():
-active_tickets = generate_episode_tickets()
-Phase 1, Task 4 - Fix inference.py Step Count
-# BEFORE:
-for step in range(5):  # only runs half the episode
-
-# AFTER:
-for step in range(50):  # full 50-step episode
-    if obs.get('done', False):
-        break
-Phase 1 Validation Checklist
-• curl POST /reset - verify bank_balance starts at 1000.0
-• curl POST /step with RestockAction 10x silk_kurta - verify balance drops by 800
-• Check active_tickets in response - must show 3-5 tickets (not just TKT-001)
-• Run full episode - verify it runs 50 steps before done=True
-• Run openenv validate - must still pass after all changes
-
-STEP 1 (continued): Add Stochastic Dynamics (Phase 2 - Day 2)
-Phase 2, Task 1 - Demand Model + Revenue Loop
-Create demand_model.py. This is the most important code change - it transforms your environment from deterministic to realistic:
-
-# demand_model.py
-import numpy as np
-
-BASE_DEMAND = {
-    'silk_kurta':    8,   # units/day at base price, no ads
-    'cotton_set':    12,  # highest volume, lowest margin
-    'linen_dupatta': 5,   # medium volume, medium margin
-    'silk_saree':    3,   # lowest volume, highest margin
-}
-
-def generate_demand(sku, ad_spend, price, competitor_price, base):
-    ad_multiplier = 1.0 + (ad_spend / 100.0)  # $100 ads = 2x demand
-    price_ratio = competitor_price / max(price, 1.0)
-    effective_lambda = base * ad_multiplier * price_ratio
-    return int(np.random.poisson(effective_lambda))
-
-def generate_all_demand(state):
-    sales = {}
-    for sku in state.inventory:
-        raw = generate_demand(sku, state.active_ad_spend.get(sku,0),
-            state.prices.get(sku,100), state.competitor_prices.get(sku,100),
-            BASE_DEMAND[sku])
-        sales[sku] = min(raw, state.inventory.get(sku, 0))
-    return sales
-Integrate into ecom_env.py step() - run every step after action processing:
-daily_sales = generate_all_demand(self.state)
-self.state.daily_sales = daily_sales
-daily_revenue = sum(daily_sales[sku] * self.state.prices.get(sku,100) for sku in daily_sales)
-self.state.bank_balance += daily_revenue
-self.state.cumulative_revenue = getattr(self.state,'cumulative_revenue',0) + daily_revenue
-for sku, sold in daily_sales.items():
-    self.state.inventory[sku] = max(0, self.state.inventory.get(sku,0) - sold)
-self.state.current_day += 1
-self.state.current_week = self.state.current_day // 7
-Phase 2, Task 2 - Add AdSpendAction
-class AdSpendAction(BaseModel):
-    action_type: Literal['ad_spend'] = 'ad_spend'
-    sku: str
-    budget: float
-
-elif action.action_type == 'ad_spend':
-    if action.budget <= 0 or action.budget > self.state.bank_balance:
-        reward = -0.2
-    else:
-        self.state.bank_balance -= action.budget
-        self.state.active_ad_spend[action.sku] = action.budget
-        reward = 0.0  # ROI evaluated on next step when demand generates
-Phase 2, Task 3 - Dense Reward Engine
-Create reward_model.py. Replace flat reward with dense reward - critical for GRPO training convergence:
-def compute_step_reward(action_result, state_before, state_after):
-    reward = action_result['base_reward']  # +0.1/+0.3/0.0/-0.2
-
-    # Dense revenue signal every step
-    daily_rev = sum(state_after.daily_sales[s]*state_after.prices.get(s,100)
-                    for s in state_after.daily_sales)
-    reward += 0.001 * daily_rev
-
-    # Solvency bonus
-    if state_after.bank_balance >= 500:
-        reward += 0.05
-
-    # Stockout penalty
-    for sku in state_after.inventory:
-        if state_after.inventory[sku]==0 and state_before.inventory.get(sku,0)>0:
-            reward -= 0.2
-
-    # Ticket aging penalty (-0.1 per urgent unresolved ticket past day 3)
-    urgent = [t for t in state_after.active_tickets
-              if t.urgency=='urgent' and t.status=='open'
-              and state_after.current_day - t.created_day >= 3]
-    reward -= 0.1 * len(urgent)
-
-    # Bankruptcy terminal penalty
-    if state_after.bank_balance <= 0:
-        reward -= 1.0
-
-    # Reward alignment: training signal aligned with final grader
-    reward += 0.01 * (state_after.bank_balance - state_before.bank_balance)
-
-    return round(reward, 4)
-
-
-STEP 2: Training Pipeline - The Mandatory Win Condition (Phase 3 - Day 3)
-PHASE 3 = 30% OF YOUR SCORE. Training script + reward curve = 20% (showing improvement) + 10% (pipeline setup). Missing this = losing two entire judging dimensions.
-Phase 3, Task 1 - GRPO Training Script (Colab Notebook)
-Create: swiftlogic_grpo_training.ipynb. This is Anirudh's primary deliverable.
-
-# Cell 1 - Install
-!pip install trl transformers accelerate datasets requests matplotlib
-
-# Cell 2 - Config
-ENV_URL = 'https://swiftlogic-e-commerce-agent.hf.space'
-MODEL_NAME = 'Qwen/Qwen2.5-0.5B-Instruct'
-MAX_EPISODES = 200
-GRPO_GROUP_SIZE = 8
-
-# Cell 3 - Env interface
-def env_reset(seed=42):
-    r = requests.post(f'{ENV_URL}/reset', json={'seed': seed}, timeout=10)
-    return r.json()['observation']
-
-def env_step(action_dict):
-    r = requests.post(f'{ENV_URL}/step', json=action_dict, timeout=10)
-    data = r.json()
-    return data['observation'], data['reward']['value'], data['done']
-# Cell 4 - Prompt builder (EXPLAINABILITY: Thought + Action format)
-def build_prompt(obs):
-    return f'''You are an AI agent managing Siyaani, an Indian ethnic wear brand.
-Goal: maximize profit over 50 days while resolving customer tickets.
-
-STATE: Day {obs['current_day']}/50 | Balance: {obs['bank_balance']:.2f}
-Inventory: {obs['inventory']}
-Open Tickets: {len([t for t in obs.get('active_tickets',[]) if t.get('status')=='open'])}
-Yesterday Sales: {obs.get('daily_sales', {})}
-
-Think step by step. Use this format EXACTLY:
-Thought: [your reasoning about the business state]
-Action: {{"action_type": "...", ...}}
-
-Available actions: restock(sku,quantity) | refund(ticket_id) |
-                   ad_spend(sku,budget) | wait
-'''
-# Cell 5 - Reward function + training loop
-from trl import GRPOConfig, GRPOTrainer
-
-config = GRPOConfig(
-    learning_rate=5e-6, num_train_epochs=3,
-    per_device_train_batch_size=1,
-    num_generations=GRPO_GROUP_SIZE,
-    max_completion_length=200,  # more space for Thought + Action
-    output_dir='./swiftlogic-grpo-output',
-)
-
-all_episode_rewards = []
-for episode in range(MAX_EPISODES):
-    obs = env_reset(seed=episode)
-    episode_reward = 0.0
-    for step in range(50):
-        if obs.get('done'): break
-        prompt = build_prompt(obs)
-        # generate -> parse Thought/Action -> env_step
-        obs, reward, done = env_step(action)
-        episode_reward += reward
-    all_episode_rewards.append(episode_reward)
-    if episode % 10 == 0:
-        avg = sum(all_episode_rewards[-10:])/min(10,len(all_episode_rewards))
-        print(f'Ep {episode}: {episode_reward:.3f} | avg: {avg:.3f}')
-# Cell 6 - Reward curve + Before/After comparison
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(12, 5))
-plt.plot(all_episode_rewards, alpha=0.4, color='steelblue', label='Episode Reward')
-window = 20
-moving_avg = [sum(all_episode_rewards[max(0,i-window):i+1])/min(window,i+1)
-              for i in range(len(all_episode_rewards))]
-plt.plot(moving_avg, color='darkblue', linewidth=2.5, label=f'{window}-ep Moving Avg')
-plt.xlabel('Training Episode')
-plt.ylabel('Total Episode Reward')
-plt.title('Swiftlogic CommerceOps v2 - Agent Learning Curve')
-plt.legend(); plt.grid(True, alpha=0.3)
-plt.savefig('reward_curve.png', dpi=150, bbox_inches='tight')
-print(f'Zero-shot: {all_episode_rewards[0]:.3f} -> Post-training: {all_episode_rewards[-1]:.3f}')
-Phase 3, Task 2 - Explainability Layer (GPT Gap #2 Fix)
-Parse the Thought field from agent output. Log it. This is your 'proof of intelligence' for the demo and directly addresses the judge question 'how does the agent reason?'
-# Parse Thought + Action from model output
-import re, json
-
-def parse_thought_action(text):
-    thought_match = re.search(r'Thought:(.*?)Action:', text, re.DOTALL)
-    action_match = re.search(r'Action:\s*({.*?})', text, re.DOTALL)
-    thought = thought_match.group(1).strip() if thought_match else 'no reasoning'
-    try:
-        action = json.loads(action_match.group(1)) if action_match else {'action_type':'wait'}
-    except:
-        action = {'action_type': 'wait'}
-    return thought, action
-
-# Example output the demo will show:
-# Thought: Day 3, 2 urgent tickets. Bank balance $950.
-#          Cotton_set stock at 5 - below safe level.
-#          Priority: resolve urgent ticket first (penalty risk),
-#          then restock tomorrow.
-# Action: {"action_type": "refund", "ticket_id": "TKT-002"}
-Phase 3, Task 3 - Before/After Comparison + Baseline Table
-Save this data. It is your 30% storytelling slide. GPT called this 'proof of intelligence' - it is the most memorable thing judges see.
-
-MetricRandom AgentZero-Shot LLMTrained Agent (target)Profit task score0.050.100.50+Bank balance (end of ep)−$400 (bankrupt)−$200 (bankrupt)+ $350 (profitable)Tickets resolved10%30%90%Inventory planningRandomReactiveStrategic (restocks before demand spike)Goes bankruptYes (by day 8)Yes (by day 12)No
-Phase 3 Success Criteria
-MetricTargetWhat It ProvesTraining completes without crashAll 200 episodes runPipeline works end-to-endEpisode 0 reward~0.10 (matches baseline)Consistent with Round 1 dataEpisode 200 reward>0.40 on Hard taskMeaningful learning has occurredReward curve shapeUpward trend with noiseGRPO is working correctlyreward_curve.png generatedClear chart with moving avgVisual evidence for judgesThought logs saved5+ examples before/afterExplainability proof for demo
-
-
-STEP 3: Production-Ready Config-Driven Architecture
-THIS IS THE DIFFERENTIATOR. Every other team will hardcode their environment. You will be the only team that can swap business types live on stage in 5 seconds. This is what 'production ready to ship' means.
-The core principle: everything the WorldEngine knows comes from config files. No business logic is hardcoded. Swap business.json and the entire world changes - products, prices, demand, rewards, action types, graders - all without touching a single line of Python.
-
-Step 3.1 - New File Structure
-commerce-ops-v2/
-├── configs/
-│   ├── siyaani_fashion.json     ← current business (default)
-│   ├── medplus_pharmacy.json    ← demo swap 1
-│   └── stackbase_saas.json      ← demo swap 2
-├── env/
-│   ├── world_engine.py          ← NEW: config-driven, no hardcoding
-│   ├── demand_model.py          ← reads from config
-│   ├── ticket_system.py         ← reads from config
-│   └── reward_engine.py         ← reads from config
-├── server/
-│   └── app.py                   ← add /config endpoint
-├── ecom_env.py                  ← refactor to use WorldEngine
-└── inference.py
-Step 3.2 - business.json Schema
-The complete config schema. Every field is documented. This replaces all hardcoded values in ecom_env.py:
-
-{
-  "business_id": "siyaani_fashion",
-  "display_name": "Siyaani Ethnic Wear",
-  "currency": "INR",
-
-  "financials": {
-    "initial_bank_balance": 50000,
-    "bankruptcy_threshold": 0,
-    "solvency_bonus_threshold": 25000
-  },
-
-  "episode": { "max_steps": 50, "steps_per_day": 1 },
-
-  "products": [
-    {
-      "sku": "silk_kurta",
-      "display_name": "Silk Kurta",
-      "unit_cost": 800, "sell_price": 1800,
-      "initial_stock": 50, "restock_lead_days": 2,
-      "demand": {
-        "base_units_per_day": 3, "demand_model": "poisson",
-        "ad_elasticity": 1.4,
-        "seasonality_weights": [1.0,1.0,1.2,1.5,1.5,1.8,2.0]
-      }
-    }
-    // ... more SKUs
-  ],
-
-  "tickets": {
-    "initial_count": 3, "spawn_rate_per_day": 0.8,
-    "issue_types": ["refund","damage","delay","wrong_item"],
-    "urgency_age_threshold_days": 3,
-    "refund_amount_range": [200, 1800]
-  },
-
-  "actions": {
-    "allowed": ["restock","refund","ad_spend","wait"],
-    "ad_spend_max_per_step": 5000
-  },
-
-  "rewards": {
-    "restock_success": 0.1, "refund_success": 0.3,
-    "ad_roi_positive": 0.15, "wait": 0.0,
-    "invalid_action": -0.2, "bankruptcy_terminal": -1.0,
-    "solvency_per_step": 0.05, "revenue_multiplier": 0.001,
-    "urgent_ticket_per_step": -0.1
-  },
-
-  "graders": [
-    {"id":"triage_task","difficulty":"easy","metric":"ticket_resolution_ratio"},
-    {"id":"inventory_task","difficulty":"medium","metric":"stock_target_ratio",
-     "target_sku":"cotton_set","target_units":10},
-    {"id":"profit_task","difficulty":"hard","metric":"bank_balance_growth",
-     "normalizer":20000}
-  ]
-}
-Step 3.3 - WorldEngine Class
-This class replaces all hardcoded logic in ecom_env.py. It reads config at runtime:
-# env/world_engine.py
-import json, copy, random
-import numpy as np
-from pathlib import Path
-
-class WorldEngine:
-    def __init__(self, config_path: str = 'configs/siyaani_fashion.json'):
-        self.load_config(config_path)
-
-    def load_config(self, config_path: str):
-        with open(config_path) as f:
-            self.config = json.load(f)
-        self._validate_config()
-        self._build_lookup_tables()
-
-    def _build_lookup_tables(self):
-        self.unit_costs = {p['sku']:p['unit_cost'] for p in self.config['products']}
-        self.sell_prices = {p['sku']:p['sell_price'] for p in self.config['products']}
-        self.demand_configs = {p['sku']:p['demand'] for p in self.config['products']}
-
-    def reset(self, seed=None):
-        if seed: random.seed(seed); np.random.seed(seed)
-        cfg = self.config
-        self.state = {
-            'current_day': 1, 'current_week': 0, 'step_count': 0,
-            'bank_balance': cfg['financials']['initial_bank_balance'],
-            'inventory': {p['sku']:p['initial_stock'] for p in cfg['products']},
-            'prices': self.sell_prices.copy(),
-            'active_tickets': self._generate_tickets(),
-            'daily_sales': {p['sku']:0 for p in cfg['products']},
-            'active_ad_spend': {p['sku']:0.0 for p in cfg['products']},
-            'cumulative_revenue': 0.0,
-            'done': False,
-        }
-        return copy.deepcopy(self.state)
-
-    def step(self, action: dict):
-        state_before = copy.deepcopy(self.state)
-        reward = self._process_action(action)
-        self._simulate_day()
-        reward = self._compute_reward(reward, state_before)
-        self.state['step_count'] += 1
-        done = (self.state['step_count'] >= self.config['episode']['max_steps']
-                or self.state['bank_balance'] <= self.config['financials']['bankruptcy_threshold'])
-        self.state['done'] = done
-        return copy.deepcopy(self.state), reward, done
-
-    def _process_action(self, action):
-        atype = action.get('action_type')
-        if atype not in self.config['actions']['allowed']:
-            return self.config['rewards']['invalid_action']
-        if atype == 'restock':
-            return self._do_restock(action)
-        elif atype == 'refund':
-            return self._do_refund(action)
-        elif atype == 'ad_spend':
-            return self._do_ad_spend(action)
-        return self.config['rewards']['wait']
-
-    def _simulate_day(self):
-        # Poisson demand per product per config
-        for product in self.config['products']:
-            sku = product['sku']
-            dcfg = product['demand']
-            ad = self.state['active_ad_spend'].get(sku, 0)
-            ad_mult = 1.0 + (ad / 100.0) * dcfg.get('ad_elasticity', 1.0)
-            day_of_week = self.state['current_day'] % 7
-            season = dcfg.get('seasonality_weights', [1.0]*7)[day_of_week]
-            lam = dcfg['base_units_per_day'] * ad_mult * season
-            demand = int(np.random.poisson(lam))
-            sold = min(demand, self.state['inventory'].get(sku, 0))
-            self.state['daily_sales'][sku] = sold
-            self.state['inventory'][sku] = max(0, self.state['inventory'].get(sku,0) - sold)
-            revenue = sold * self.state['prices'].get(sku, 0)
-            self.state['bank_balance'] += revenue
-            self.state['cumulative_revenue'] += revenue
-        self.state['current_day'] += 1
-        self.state['current_week'] = self.state['current_day'] // 7
-Step 3.4 - Add /config Endpoint to FastAPI Server
-This is the live demo superpower. Judges pick a business type from the dashboard and you hot-swap it in real time:
-# server/app.py - add this new endpoint
-from pathlib import Path
-
-@app.post('/config')
-async def load_config(body: dict):
-    '''Hot-reload the environment with a different business config.'''
-    business_id = body.get('business_id', 'siyaani_fashion')
-    config_path = Path(f'configs/{business_id}.json')
-    if not config_path.exists():
-        return {'error': f'Config {business_id} not found'}
-    env.world_engine.load_config(str(config_path))
-    obs = env.reset(seed=42)
-    return {
-        'status': 'config_loaded',
-        'business_id': business_id,
-        'display_name': env.world_engine.config['display_name'],
-        'products': [p['sku'] for p in env.world_engine.config['products']],
-        'observation': obs
-    }
-
-# Demo: curl -X POST /config -d '{"business_id": "medplus_pharmacy"}'
-# Response: pharmacy world loaded in <100ms, no server restart
-Step 3.5 - Three Ready Business Configs
-These three configs are ready to drop into configs/. Each runs on the same WorldEngine with zero code changes:
-
-BusinessProductsInitial BalanceKey ChallengeUnique HookSiyaani Fashion (default)silk_kurta, cotton_set, linen_dupattaINR 50,000Weekend demand spikes 2xSeasonality weights per SKUMedPlus Pharmacyparacetamol, vitamin_d3, bp_monitorINR 80,000Higher urgency penalties, medicine expiryurgent_ticket_per_step: -0.2Stackbase SaaSstarter_plan, pro_plan, enterprise_planUSD 10,000Low unit cost, high ad elasticityrestock_lead_days: 0 (digital)
-DEMO LINE TO USE ON STAGE: 'The agent doesn't know it's selling kurtas. It's learning to run a business. Watch what happens when we switch to a pharmacy.' [swap config live] 'Same agent. Same training. Different world.'
-
-
-GPT Gaps - What We Adopted from GPT's Audit
-Gap 1 - Reward Alignment (Fixed in Step 2)
-GPT identified that training reward must be aligned with the final evaluation metric. This is now fixed in reward_engine.py:
-# Added to compute_step_reward() in Step 2:
-reward += 0.01 * (state_after.bank_balance - state_before.bank_balance)
-# Training reward now directly tracks the profit grader objective.
-# Agent cannot optimize a proxy - it must grow real bank balance.
-Gap 2 - Explainability Layer (Fixed in Step 2)
-GPT said 'your system shows action but not reasoning.' Fixed by the Thought + Action prompt format in the training script. Every agent decision now logs:
-# Example logged output after training:
-Thought: Day 7. Cotton_set stock at 3 units - below target.
-         Weekend tomorrow (day 8) - demand spikes 1.9x.
-         Bank balance INR 42,000 - safe to restock.
-         Urgent ticket TKT-003 can wait one more day.
-Action: {"action_type": "restock", "sku": "cotton_set", "quantity": 15}
-Gap 3 - Supplier Agent (Phase 3 Bonus - Day 5 Only)
-Build the Supplier Agent ONLY if: training pipeline is complete + all mandatory deliverables done + 4+ hours buffer. Do NOT sacrifice training quality for this.
-# supplier_agent.py - rule-based, no second LLM needed
-class SupplierAgent:
-    BASE_PRICES = {'silk_kurta':800,'cotton_set':500,'linen_dupatta':600,'silk_saree':1200}
-
-    def quote_price(self, sku, quantity_requested, demand_signal):
-        base = self.BASE_PRICES.get(sku, 700)
-        volume_premium = 1.0 + max(0, (quantity_requested-20)*0.01)
-        demand_premium = 1.0 + (demand_signal * 0.1)  # high demand = higher price
-        return round(base * volume_premium * demand_premium, 2)
-
-# New action: NegotiateAction (2-step restock with price discovery)
-class NegotiateAction(BaseModel):
-    action_type: Literal['negotiate'] = 'negotiate'
-    sku: str
-    quantity: int
-# Step 1: NegotiateAction -> get price quote in observation
-# Step 2: RestockAction -> accept quote and pay
-# Agent now decides: buy now or wait for supplier price to drop?
-# Directly covers Theme #1 Multi-Agent bonus prize.
-
-
-Section D: Pitch Strategy - 3 Minutes to Win
-D.1 Word-for-Word 3-Minute Script
-TimeWhoWhat to Say0:00-0:20PrayashEvery day, thousands of small fashion brands in India make decisions that determine if they survive or go bankrupt. Restock now or save cash? Resolve the angry customer or manage the warehouse? What if an AI could learn to make those calls - better than a human - in 50 days flat?0:20-0:50RehanWe built CommerceOps v2 - a full simulation of Siyaani, an ethnic wear brand. The agent manages 4 product lines, a live bank balance, stochastic customer demand, and 3-5 real support tickets at a time. Over 50 business days. Every action has financial consequences. Run out of money - the business dies.0:50-1:20AnirudhHere is our untrained agent on day 1. [show JSON + Thought log] It randomly restocks silk sarees - the most expensive SKU - depletes the bank balance, ignores 4 urgent tickets, and bankrupts Siyaani by day 12. Score: 0.10 on profit.1:20-1:50AnirudhWe ran 200 training episodes using GRPO on HuggingFace TRL. [show reward curve] Watch the reward climb from 0.10 to 0.55. The agent learned: refund urgent tickets first, restock cotton sets before weekends, allocate ads strategically.1:50-2:20RehanHere is the same agent after training. [show Thought + Action] 'Day 1: resolve critical ticket. Day 3: restock cotton set - demand spike coming. Day 7: ad spend before weekend.' Siyaani survives. Balance positive. Score: 0.55.2:20-2:50PrayashThis is World Modeling. The agent builds an internal causal model of an entire business. Live on HuggingFace Spaces right now. And watch - [swap to pharmacy config] - same agent, same model, different world. It generalizes.2:50-3:00AllCommerceOps v2. Open source. Live demo. Trained agent. [QR code] Thank you.
-D.2 Anticipated Q&A - Full Answers
-• Why e-commerce and not coding/games?  Business operations are the most underrepresented domain in RL benchmarks. E-commerce has rich causality: financial constraints, customer SLAs, supply chain trade-offs, advertising ROI - all requiring multi-step causal reasoning. And Meta's WhatsApp Business investment makes this directly relevant to their product roadmap.
-• How does your reward prevent hacking?  Three competing objectives: grow revenue (but reckless spending causes bankruptcy), resolve tickets (but refunds cost money), maintain inventory (but buying too much depletes cash). No single exploit path. Optimizing any one at the expense of others = low score.
-• Why GRPO over PPO?  GRPO doesn't need a value network. Faster convergence with small models. Samples 8 completions per prompt and uses relative quality as training signal - perfect for our discrete action space.
-• Can it run different businesses?  Yes - that is Step 3. [show config swap live] Same WorldEngine, different business.json. Fashion → Pharmacy → SaaS in under 5 seconds.
-• What after the hackathon?  v3: real Shopify webhook data initializes inventory from actual store state. WhatsApp Business agent powered by trained model recommends daily actions to real merchants. Open-source benchmark for business AI.
-
-
-
-Section E: Full Submission Checklist
-E.1 Minimum Requirements - Mandatory
-#RequirementStatusOwnerDue1OpenEnv latest release in useDONERehan2openenv validate passes on live HF SpaceDONERehan3Training script using HF TRL or Unsloth in Colab (must run)BUILDAnirudhDay 34Mini HuggingFace blog post (<2 min read)WRITEPrayashDay 45Mini YouTube video (<2 minutes)RECORDAllDay 46Joined private Discord (MANDATORY)CHECKRehanToday7Government photo ID at venuePERSONALAll 3Carry8College/company ID matching registrationPERSONALAll 3Carry
-E.2 Day-by-Day Execution Summary
-DayOwnerTasksDay 1 (Apr 20)RehanFix RestockAction cost deduction · Extend to 50 steps · Dynamic ticket generator (3-5) · Fix inference.py to 50 stepsDay 2 (Apr 21)Rehandemand_model.py · Revenue loop · AdSpendAction · Dense reward engine · 4 SKUs · competitor_prices fieldDay 3 (Apr 22)AnirudhGRPO Colab training script · Thought+Action prompt · Run 200 episodes · reward_curve.png · before_after_comparison.jsonDay 3 (Apr 22)RehanStep 3: world_engine.py · business.json configs · /config endpoint · Validate all 3 business types workDay 4 (Apr 23)AllHF blog post (Prayash) · YouTube video (All) · Pitch deck 8 slides · First rehearsalDay 5 (Apr 24)AllFinal openenv validate · Docker push · 3x pitch rehearsal · Printed Q&A cheat sheet · Links checkApr 25 (Onsite)AllClaim HF credits IMMEDIATELY · Start 200-ep GRPO on A10G · Update pitch with live numbers · Final rehearsal
-
-
-Section F: Competitive Advantage + Final Formula
-F.1 Your Three Unfair Advantages
-Advantage 1: You are LIVE. You have a running HTTPS endpoint judges can curl from their phone during the pitch. Not a slide - a product.
-Advantage 2: The Siyaani story is memorable. 10-15 teams pitch to each judge. Most will say 'resource allocation environment.' You say 'Can AI run an Indian fashion startup?' They remember you.
-Advantage 3: Step 3 config-driven demo. You are the ONLY team that can swap business type on stage in 5 seconds. No one else will do this. It proves your environment is a platform, not a one-off.
-F.2 The Winning Formula
-Must have on April 25 morningDo on site (April 25-26)Phase 1 + 2 environment deployed and validatedClaim HF compute credits IMMEDIATELY on arrivalGRPO training script ready in Colab (tested, not crashed)Start 200-episode GRPO run - let it run all dayStep 3 config-driven WorldEngine deployed to HFGenerate final reward_curve.png with live training dataHuggingFace blog post published (link live)Demonstrate live config swap during pitchYouTube video public (link ready)Show Thought+Action explainability logsPitch deck 8 slides, rehearsed 3xPitch confidently. Show the live API. Show the curve. Win.
-FINAL MESSAGE: You already have the hardest part done - a live, compliant, deployed environment with a compelling real-world narrative. The gap between now and winning is: (1) fix environment physics, (2) build training pipeline, (3) add config-driven production layer, (4) tell the story clearly. Four concrete steps. Do them in order. Go make Siyaani profitable.
-Best of luck, Rehan, Prayash, and Anirudh.
-Meta × PyTorch × OpenEnv × Scaler Hackathon Grand Finale - April 25-26, 2026
-SWIFTLOGIC COMMERCEOPS v2 - GRAND FINALE MASTER ROADMAP	Meta × Scaler OpenEnv 2026
-
-Mohd Rehan · Prayash Raj Mishra · Anirudh Pratap Singh Yadav	Page 
-

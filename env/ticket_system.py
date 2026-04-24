@@ -84,6 +84,7 @@ def spawn_daily_tickets(
     urgency_weights: Optional[List[float]] = None,
     rng: Optional[random.Random] = None,
     max_active: Optional[int] = None,
+    ticket_id_high_water_mark: Optional[List[int]] = None,
 ) -> List[dict]:
     """Spawn new tickets in-place with probability ``spawn_rate_per_day`` per day.
 
@@ -108,8 +109,23 @@ def spawn_daily_tickets(
         return []
 
     existing_ids = {t.get("ticket_id") for t in active_tickets}
-    # Determine next index based on the largest existing TKT-### id we can parse.
+    # Post-audit round-2 (A2-39) — prefer the monotonic high-water-mark
+    # counter supplied by the caller (``engine.state["_ticket_id_hwm"]``).
+    # This prevents ID recycling after resolved tickets are retention-
+    # pruned: the scanned-list method below would re-use a low index.
+    # ``ticket_id_high_water_mark`` is a one-element mutable list so the
+    # caller sees the post-spawn value; defaults to None which preserves
+    # the legacy scan-existing-ids behaviour for back-compat.
     next_idx = 1
+    if (
+        ticket_id_high_water_mark is not None
+        and isinstance(ticket_id_high_water_mark, list)
+        and ticket_id_high_water_mark
+    ):
+        try:
+            next_idx = int(ticket_id_high_water_mark[0]) + 1
+        except (TypeError, ValueError):
+            next_idx = 1
     for tid in existing_ids:
         if not isinstance(tid, str) or not tid.startswith("TKT-"):
             continue
@@ -139,4 +155,18 @@ def spawn_daily_tickets(
         active_tickets.append(ticket)
         open_count += 1
         next_idx += 1
+
+    # Publish the updated high-water mark so the caller's counter is
+    # advanced even when the loop short-circuited on ``max_active``.
+    if (
+        ticket_id_high_water_mark is not None
+        and isinstance(ticket_id_high_water_mark, list)
+        and ticket_id_high_water_mark
+    ):
+        try:
+            ticket_id_high_water_mark[0] = max(
+                int(ticket_id_high_water_mark[0]), next_idx - 1
+            )
+        except (TypeError, ValueError):
+            ticket_id_high_water_mark[0] = next_idx - 1
     return new_tickets

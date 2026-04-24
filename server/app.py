@@ -11,6 +11,22 @@ When ``EcomEnv()`` construction fails (missing or malformed config) the
 factory now returns a "degraded" app that responds 503 on every mutating
 endpoint and exposes a diagnostic ``/health`` payload, instead of crashing
 the process at import time.
+
+.. note::
+    **Concurrency model** (post-audit M-4 / B-2) — the factory creates
+    ONE :class:`EcomEnv` per process. The env's state is serialized
+    behind ``state["lock"]``, so every endpoint runs strictly sequentially
+    even on a multi-threaded event loop. This intentionally keeps the
+    simulation deterministic.
+
+    **Do NOT run this app with ``uvicorn --workers N`` (N>1) or behind a
+    pre-forking WSGI gateway.** Each worker gets its own process with its
+    own env, its own per-env RNG, and its own initial-state snapshot, so
+    grader scores become non-deterministic with respect to the caller's
+    seed. The shipped ``Dockerfile`` sticks to a single uvicorn worker
+    for exactly this reason. For horizontal scaling, run N independent
+    single-worker containers behind a sticky-routing load balancer so
+    each client hits the same env for its entire episode.
 """
 
 from __future__ import annotations
@@ -21,6 +37,7 @@ import os
 import re
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, get_args
 
@@ -32,6 +49,54 @@ from pydantic import BaseModel, ValidationError
 
 
 logger = logging.getLogger("commerceops")
+
+
+class _WarningCollector(logging.Handler):
+    """Buffer WARNING-level records emitted by the ``commerceops.*`` loggers.
+
+    Post-audit C-5 — ``/config`` previously returned the loaded business
+    metadata but left the operator to scrape stderr for any warnings the
+    config validator emitted (unknown keys, deprecated keys, soft
+    bankruptcy warnings). We now attach a short-lived collector during
+    :func:`EcomEnv` construction / ``load_config`` and return the
+    captured warnings in the response so clients can surface them in
+    their UI without re-parsing the log stream.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(level=logging.WARNING)
+        self.records: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            self.records.append(self.format(record))
+        except Exception:  # pragma: no cover — never let logging crash.
+            pass
+
+
+def _capture_config_warnings():
+    """Context-manager helper: attach a collector to the commerceops loggers.
+
+    Used by ``/config`` (and ``create_app``) to surface validator
+    warnings without changing any existing log routing; the collector is
+    removed again on exit so it never leaks across requests.
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _cm():
+        collector = _WarningCollector()
+        collector.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+        # Attach to the root "commerceops" logger so all submodule
+        # warnings (commerceops.world_engine, commerceops.actions, ...)
+        # are captured.
+        logger.addHandler(collector)
+        try:
+            yield collector
+        finally:
+            logger.removeHandler(collector)
+
+    return _cm()
 
 # Hard cap on inbound JSON body size. The simulation only ever accepts small
 # control payloads ({seed}, {business_id}, action dicts), so 64 KiB is ample.
@@ -118,6 +183,19 @@ except ImportError:  # pragma: no cover — engine import is a hard dep at runti
 # Only filesystem-safe slugs are allowed for /config business ids.
 _BUSINESS_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]{0,63}$")
 
+# Post-audit round-2 (A2-48) — Windows reserves a handful of legacy
+# device names that cannot be used as file stems even on case-insensitive
+# filesystems. Even though the regex above already gates the slug to a
+# small alphabet, a literal ``con`` or ``nul`` would still collide with
+# the reserved names and crash ``open()`` on Windows during config load.
+# Reject these up front so the failure surfaces as a clean 400 instead
+# of a 500-level OS error.
+_WINDOWS_RESERVED_SLUGS: frozenset = frozenset({
+    "con", "prn", "aux", "nul",
+    "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+    "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+})
+
 
 def _available_business_ids() -> set:
     """Return the set of config slugs currently discoverable on disk."""
@@ -138,11 +216,13 @@ async def _safe_json(request: Request) -> Any:
     ``_BodyTooLarge`` when the *actual* body size exceeds ``MAX_BODY_BYTES``.
     Callers translate that into a stable 413.
 
-    v2.3 Phase 2.1 — previously the cap was header-only, so chunked or
-    lying clients could skip it. We now also measure ``len(raw)`` after
-    reading the full body so oversized payloads are rejected regardless
-    of transfer encoding. The fast-fail on the header is preserved as a
-    cheap short-circuit when honest clients announce their size.
+    v2.3.x Phase A.1 — the body is now streamed chunk-by-chunk and the
+    accumulator is aborted as soon as it crosses ``MAX_BODY_BYTES + 1``.
+    This prevents oversized / chunked / lying clients from forcing the
+    ASGI layer to buffer arbitrarily large payloads in memory before we
+    get a chance to reject them. The ``content-length`` fast-path is
+    preserved so honest clients short-circuit without touching the
+    stream at all.
     """
     import json
 
@@ -153,21 +233,32 @@ async def _safe_json(request: Request) -> Any:
                 raise _BodyTooLarge()
         except ValueError:
             return None
+
+    limit = MAX_BODY_BYTES
+    buf = bytearray()
     try:
-        raw = await request.body()
+        async for chunk in request.stream():
+            if not chunk:
+                continue
+            buf.extend(chunk)
+            if len(buf) > limit:
+                raise _BodyTooLarge()
     except _BodyTooLarge:
         raise
-    except Exception:
+    except (OSError, RuntimeError, ConnectionError):
+        # Narrow on stream-read failures (A2-49 post-audit round-2).
+        # Anything broader propagates so FastAPI's 500 handler can log
+        # with a traceback rather than swallowing genuine bugs.
         return None
-    if raw is None:
-        return None
-    if len(raw) > MAX_BODY_BYTES:
-        raise _BodyTooLarge()
-    if not raw:
+
+    if not buf:
         return None
     try:
-        return json.loads(raw)
-    except Exception:
+        return json.loads(bytes(buf))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        # Post-audit round-2 (A2-49) — narrow the JSON-parse handler so
+        # unexpected exceptions (e.g. OOM, keyboard interrupt) bubble up
+        # instead of being silently coerced to ``None``.
         return None
 
 
@@ -269,6 +360,20 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
         logger.exception("EcomEnv construction failed; starting in degraded mode")
         state["degraded_reason"] = f"{exc.__class__.__name__}: {exc}"
 
+    # Post-audit round-2 (A2-9) — OpenEnv validators sometimes hit
+    # ``/grader`` before issuing an explicit ``/reset`` (they treat the
+    # freshly-constructed env as the implicit baseline). Capture the
+    # current observation here so that workflow succeeds with a sane
+    # baseline even without an explicit reset. The /reset and /config
+    # routes still overwrite this with the post-reset observation.
+    if state["env"] is not None:
+        try:
+            state["initial_state"] = state["env"].state().model_copy(deep=True)
+        except Exception:
+            # Defensive — constructing the initial obs should never
+            # fail, but if it does we fall back to the 409 behaviour.
+            state["initial_state"] = None
+
     # Expose for tests / debugging without leaking into the HTTP surface.
     app.state.commerceops = state
 
@@ -369,10 +474,27 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
         try:
             action = model_cls(**action_data)
         except ValidationError as e:
+            if state["debug_enabled"]:
+                logger.debug(
+                    "commerceops.step action_type=%s invalid_action=1 reason=validation",
+                    a_type,
+                )
             return _bad_request("Action validation failed", errors=e.errors())
         except TypeError as e:
+            if state["debug_enabled"]:
+                logger.debug(
+                    "commerceops.step action_type=%s invalid_action=1 reason=type_error",
+                    a_type,
+                )
             return _bad_request(f"Action validation failed: {e}")
 
+        # Post-audit C.4 (v2.3.x) — lightweight structured telemetry gated on
+        # ``COMMERCEOPS_DEBUG=1``. We emit one debug line per accepted step
+        # with the action type, measured latency, and the ``info.invalid``
+        # flag if the engine downgraded the action at dispatch. No metrics
+        # backend is wired up here; this is purely a logging hook so
+        # operators can tail the container log and spot anomalies.
+        t_start = time.perf_counter() if state["debug_enabled"] else 0.0
         try:
             with state["lock"]:
                 obs, reward, done, info = state["env"].step(action)
@@ -384,8 +506,18 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
             )
 
         if state["debug_enabled"]:
+            latency_ms = round((time.perf_counter() - t_start) * 1000.0, 3)
+            engine_invalid = 1 if bool(info.get("invalid", False)) else 0
+            logger.debug(
+                "commerceops.step action_type=%s latency_ms=%s invalid_action=%s",
+                a_type,
+                latency_ms,
+                engine_invalid,
+            )
             state["last_step_info"].clear()
-            state["last_step_info"].update({"action_type": a_type, **info})
+            state["last_step_info"].update(
+                {"action_type": a_type, "latency_ms": latency_ms, **info}
+            )
 
         return {
             "observation": obs.model_dump(),
@@ -425,11 +557,15 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
 
         Returns 409 when no baseline has been snapshotted. A grader call is
         a strictly read-only operation, so this endpoint never mutates env
-        state. v2.3 Phase 3.4 — each grader is called with
+        state and — as of v2.3.x Phase B.3 — never reads the request body
+        either. The ``request`` parameter is kept purely for FastAPI route
+        typing so the OpenAPI schema and OpenEnv validator keep seeing the
+        same signature. v2.3 Phase 3.4 — each grader is called with
         ``context=env.grader_context`` explicitly so the per-env context
-        bypass the module-level mirror and two processes running different
-        configs can't race.
+        bypasses the module-level mirror and two processes running
+        different configs can't race.
         """
+        del request  # explicitly unused; see docstring.
         unavailable = _require_env()
         if unavailable is not None:
             return unavailable
@@ -445,18 +581,21 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
             final_state = state["env"].state()
             initial_state = state["initial_state"]
             grader_ctx = state["env"].grader_context
-
-        scores = {
-            "triage_task": grade_triage_task(
-                initial_state, final_state, context=grader_ctx
-            ),
-            "inventory_task": grade_inventory_task(
-                initial_state, final_state, context=grader_ctx
-            ),
-            "profit_task": grade_profit_task(
-                initial_state, final_state, context=grader_ctx
-            ),
-        }
+            # A2-1 — compute scores under the same lock as state/context
+            # capture so a concurrent /step or /config cannot mutate
+            # ``grader_context`` (or the observation backing ``final_state``)
+            # between snapshot and grader execution.
+            scores = {
+                "triage_task": grade_triage_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+                "inventory_task": grade_inventory_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+                "profit_task": grade_profit_task(
+                    initial_state, final_state, context=grader_ctx
+                ),
+            }
 
         results = []
         for task in TASKS:
@@ -508,6 +647,13 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
                 business_id=str(business_id),
                 pattern=_BUSINESS_ID_RE.pattern,
             )
+        # Post-audit round-2 (A2-48) — reject Windows-reserved slugs.
+        if business_id.lower() in _WINDOWS_RESERVED_SLUGS:
+            return _bad_request(
+                "Reserved business_id (Windows device name)",
+                business_id=business_id,
+                reserved=sorted(_WINDOWS_RESERVED_SLUGS),
+            )
 
         available = _available_business_ids()
         if business_id not in available:
@@ -520,10 +666,14 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
             )
 
         config_path = Path(ROOT) / "configs" / f"{business_id}.json"
+        # Post-audit C-5 — capture any non-fatal warnings the validator
+        # emits while loading this config so the response body can
+        # surface them to the client. Fatal errors still come back as
+        # 400s via the existing exception handler.
+        warnings_captured: list[str] = []
         try:
-            with state["lock"]:
+            with state["lock"], _capture_config_warnings() as collector:
                 if state["env"] is None:
-                    # Recover from degraded mode: build a fresh env now.
                     state["env"] = EcomEnv(config_path=str(config_path))
                     state["degraded_reason"] = None
                     obs = state["env"].state()
@@ -532,6 +682,7 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
                 else:
                     obs = state["env"].load_config(str(config_path), seed=seed)
                 state["initial_state"] = obs.model_copy(deep=True)
+                warnings_captured = list(collector.records)
         except Exception:
             logger.exception("Failed to load config %s", business_id)
             return _bad_request(f"Failed to load config '{business_id}'")
@@ -543,6 +694,7 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
             "display_name": env.world_engine.config.get("display_name"),
             "currency": env.world_engine.config.get("currency"),
             "products": [p["sku"] for p in env.world_engine.config.get("products", [])],
+            "warnings": warnings_captured,
             "observation": obs.model_dump(),
         }
 
@@ -555,6 +707,46 @@ app = create_app()
 
 
 def main():
+    # Audit MINOR #18 — soft runtime guard against the documented
+    # anti-pattern ``uvicorn --workers N`` (N>1). Multiple workers
+    # each construct an independent ``EcomEnv`` with a fresh RNG, so
+    # graders go non-deterministic and the ``state["lock"]`` only
+    # serialises *per-worker* requests. We check a couple of common
+    # signals (``UVICORN_WORKERS`` env var, ``WEB_CONCURRENCY`` used
+    # by Heroku-style buildpacks, and the ``--workers`` CLI flag) and
+    # log a loud warning. We do NOT refuse to start — operators have
+    # legitimate reasons to run multi-worker tests — but the warning
+    # is hard to miss.
+    import sys
+    try:
+        env_workers = int(os.environ.get("UVICORN_WORKERS", "1") or 1)
+    except (TypeError, ValueError):
+        env_workers = 1
+    try:
+        web_concurrency = int(os.environ.get("WEB_CONCURRENCY", "1") or 1)
+    except (TypeError, ValueError):
+        web_concurrency = 1
+    cli_workers = 0
+    for i, arg in enumerate(sys.argv):
+        if arg == "--workers" and i + 1 < len(sys.argv):
+            try:
+                cli_workers = int(sys.argv[i + 1])
+            except ValueError:
+                cli_workers = 0
+        elif arg.startswith("--workers="):
+            try:
+                cli_workers = int(arg.split("=", 1)[1])
+            except ValueError:
+                cli_workers = 0
+    worker_count = max(env_workers, web_concurrency, cli_workers)
+    if worker_count > 1:
+        logger.warning(
+            "multiworker_anti_pattern workers=%s "
+            "CommerceOps v2 runs one EcomEnv per worker (independent RNG). "
+            "Graders will be non-deterministic across workers. "
+            "Deploy behind a single-worker container with sticky routing.",
+            worker_count,
+        )
     uvicorn.run(app, host="0.0.0.0", port=7860)
 
 

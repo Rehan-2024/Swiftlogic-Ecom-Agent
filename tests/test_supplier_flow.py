@@ -268,7 +268,11 @@ def test_list_price_unknown_sku_logs_warning(caplog):
     assert any(
         "supplier_list_price_fallback" in m and "ghost_sku" in m for m in messages
     ), messages
-    assert value == agent.fallback_base_price
+    # Post-audit round-2 (A2-21): the fallback is now derived from the
+    # mean of configured base_prices when any are present, not the
+    # module constant. With only ``known_sku=100.0`` in the map we
+    # expect 100.0 back instead of the ``FALLBACK_BASE_PRICE`` default.
+    assert value == 100.0
 
 
 def test_quote_price_unknown_sku_logs_warning(caplog):

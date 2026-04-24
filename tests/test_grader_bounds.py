@@ -100,3 +100,55 @@ def test_grader_explicit_context_does_not_warn(recwarn):
     grade_profit_task(initial, final, context=env.grader_context)
     depr = [w for w in recwarn.list if issubclass(w.category, DeprecationWarning)]
     assert not depr, [str(w.message) for w in depr]
+
+
+# ---------------------------------------------------------------------------
+# Post-audit A.2 (v2.3.x) — COMMERCEOPS_STRICT_GRADER_CONTEXT escalation
+# ---------------------------------------------------------------------------
+
+def test_strict_mode_raises_on_missing_context(monkeypatch):
+    """With ``COMMERCEOPS_STRICT_GRADER_CONTEXT=1`` set, calling a grader
+    without ``context=`` must escalate from DeprecationWarning to
+    RuntimeError so CI fails fast on any lingering caller.
+    """
+    env = EcomEnv(CONFIGS[0])
+    initial = env.reset(seed=1).model_copy(deep=True)
+    env.step({"action_type": "wait"})
+    final = env.state()
+
+    monkeypatch.setenv("COMMERCEOPS_STRICT_GRADER_CONTEXT", "1")
+    with pytest.raises(RuntimeError, match="grade_inventory_task"):
+        grade_inventory_task(initial, final)
+    with pytest.raises(RuntimeError, match="grade_profit_task"):
+        grade_profit_task(initial, final)
+
+
+def test_strict_mode_still_accepts_explicit_context(monkeypatch):
+    """Strict mode must only affect the deprecated call path. Passing
+    ``context=env.grader_context`` stays silent and the grader still
+    returns a score in the open interval.
+    """
+    env = EcomEnv(CONFIGS[0])
+    initial = env.reset(seed=1).model_copy(deep=True)
+    env.step({"action_type": "wait"})
+    final = env.state()
+
+    monkeypatch.setenv("COMMERCEOPS_STRICT_GRADER_CONTEXT", "1")
+    inv = grade_inventory_task(initial, final, context=env.grader_context)
+    prof = grade_profit_task(initial, final, context=env.grader_context)
+    assert 0.01 <= inv <= 0.99
+    assert 0.01 <= prof <= 0.99
+
+
+def test_default_mode_warns_not_raises(monkeypatch):
+    """Without the strict env var, the deprecated path must stay warn-only
+    so existing integrations keep working until v2.4 removes the mirror.
+    """
+    env = EcomEnv(CONFIGS[0])
+    initial = env.reset(seed=1).model_copy(deep=True)
+    env.step({"action_type": "wait"})
+    final = env.state()
+
+    monkeypatch.delenv("COMMERCEOPS_STRICT_GRADER_CONTEXT", raising=False)
+    with pytest.warns(DeprecationWarning):
+        grade_inventory_task(initial, final)
