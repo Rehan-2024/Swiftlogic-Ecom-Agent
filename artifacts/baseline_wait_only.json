@@ -1,17 +1,12 @@
 {
   "label": "wait_only",
-  "timestamp": "2026-04-25T08:56:04",
+  "timestamp": "2026-04-26T04:30:01",
   "seeds": [
     101,
     202,
     303,
     404,
-    505,
-    606,
-    707,
-    808,
-    909,
-    1010
+    505
   ],
   "configs": [
     "D:\\CMS\\configs\\siyaani_fashion.json"
@@ -106,101 +101,11 @@
         "competitor_response_task": 0.6069,
         "crisis_recovery_task": 0.99
       }
-    },
-    {
-      "seed": 606,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -29.4645,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 225000.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.8442,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 707,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -23.0874,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 225000.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.7054,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 808,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -30.0666,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 225000.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.818,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 909,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -27.7582,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 225000.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.8746,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 1010,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -32.9912,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 225000.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.6381,
-        "crisis_recovery_task": 0.99
-      }
     }
   ],
   "summary": {
-    "n_episodes": 10,
-    "mean_total_reward": -28.7499,
+    "n_episodes": 5,
+    "mean_total_reward": -28.8261,
     "mean_format_compliance": 1.0,
     "mean_fallback_rate": 0.0,
     "mean_final_bank": 225000.0,
@@ -222,8 +127,8 @@
         "stdev": 0.0
       },
       "competitor_response_task": {
-        "mean": 0.6784,
-        "stdev": 0.172
+        "mean": 0.5808,
+        "stdev": 0.1808
       },
       "crisis_recovery_task": {
         "mean": 0.99,
@@ -231,7 +136,7 @@
       }
     },
     "composite_training_mean": 0.3367,
-    "composite_all_mean": 0.6114
+    "composite_all_mean": 0.5951
   },
   "provenance": "deterministic"
 }

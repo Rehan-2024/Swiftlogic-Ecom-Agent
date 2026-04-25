@@ -1,8 +1,8 @@
 {
-  "pipeline_run_at": "2026-04-25T08:56:09",
-  "pipeline_mode": "full",
+  "pipeline_run_at": "2026-04-26T04:30:05",
+  "pipeline_mode": "fast",
   "provenance": "heuristic_fallback",
   "adapter_status": "missing",
-  "wall_seconds": 5.7,
+  "wall_seconds": 4.3,
   "artifact_hash_policy": "colab overwrites on next run with trained numbers"
 }

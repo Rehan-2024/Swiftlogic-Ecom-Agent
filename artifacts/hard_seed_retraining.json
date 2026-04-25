@@ -1,21 +1,21 @@
 {
   "provenance": "heuristic_fallback",
   "hard_seeds": [
-    1111,
     111,
-    999
+    444,
+    555
   ],
   "before": {
     "summary": {
       "n_episodes": 3,
-      "mean_total_reward": -232.4216,
+      "mean_total_reward": -191.5811,
       "mean_format_compliance": 1.0,
       "mean_fallback_rate": 0.0,
-      "mean_final_bank": 202618.2733,
+      "mean_final_bank": 206441.3433,
       "per_task": {
         "triage_task": {
-          "mean": 0.01,
-          "stdev": 0.0
+          "mean": 0.2811,
+          "stdev": 0.2491
         },
         "inventory_task": {
           "mean": 0.01,
@@ -30,29 +30,29 @@
           "stdev": 0.0
         },
         "competitor_response_task": {
-          "mean": 0.5128,
-          "stdev": 0.1652
+          "mean": 0.5974,
+          "stdev": 0.0848
         },
         "crisis_recovery_task": {
           "mean": 0.99,
           "stdev": 0.0
         }
       },
-      "composite_training_mean": 0.3367,
-      "composite_all_mean": 0.5838
+      "composite_training_mean": 0.427,
+      "composite_all_mean": 0.6431
     }
   },
   "after": {
     "summary": {
       "n_episodes": 3,
-      "mean_total_reward": -232.4216,
+      "mean_total_reward": -191.5811,
       "mean_format_compliance": 1.0,
       "mean_fallback_rate": 0.0,
-      "mean_final_bank": 202618.2733,
+      "mean_final_bank": 206441.3433,
       "per_task": {
         "triage_task": {
-          "mean": 0.01,
-          "stdev": 0.0
+          "mean": 0.2811,
+          "stdev": 0.2491
         },
         "inventory_task": {
           "mean": 0.01,
@@ -67,16 +67,16 @@
           "stdev": 0.0
         },
         "competitor_response_task": {
-          "mean": 0.5128,
-          "stdev": 0.1652
+          "mean": 0.5974,
+          "stdev": 0.0848
         },
         "crisis_recovery_task": {
           "mean": 0.99,
           "stdev": 0.0
         }
       },
-      "composite_training_mean": 0.3367,
-      "composite_all_mean": 0.5838
+      "composite_training_mean": 0.427,
+      "composite_all_mean": 0.6431
     }
   },
   "note": "In fallback mode the before / after are identical (pure heuristic). The Colab notebook runs a real 30-step GRPO burst targeting these exact seeds and replaces this file."

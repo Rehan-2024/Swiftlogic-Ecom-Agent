@@ -1,17 +1,12 @@
 {
   "label": "random",
-  "timestamp": "2026-04-25T08:56:04",
+  "timestamp": "2026-04-26T04:30:01",
   "seeds": [
     101,
     202,
     303,
     404,
-    505,
-    606,
-    707,
-    808,
-    909,
-    1010
+    505
   ],
   "configs": [
     "D:\\CMS\\configs\\siyaani_fashion.json"
@@ -106,112 +101,22 @@
         "competitor_response_task": 0.4142,
         "crisis_recovery_task": 0.99
       }
-    },
-    {
-      "seed": 606,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -1002.2366,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 237537.95,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.99,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 707,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -359.5337,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 287975.39,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.0455,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.5646,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 808,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -1186.9406,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 404522.94,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.99,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.0713,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 909,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -1390.4796,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 267043.25,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.3127,
-        "crisis_recovery_task": 0.99
-      }
-    },
-    {
-      "seed": 1010,
-      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
-      "steps": 50,
-      "total_reward": -1713.897,
-      "format_compliance": 1.0,
-      "fallback_rate": 0.0,
-      "final_bank": 319064.0,
-      "final_customer_satisfaction": 1.0,
-      "grader_scores": {
-        "triage_task": 0.01,
-        "inventory_task": 0.01,
-        "profit_task": 0.99,
-        "stability_task": 0.99,
-        "competitor_response_task": 0.4265,
-        "crisis_recovery_task": 0.99
-      }
     }
   ],
   "summary": {
-    "n_episodes": 10,
-    "mean_total_reward": -1102.247,
+    "n_episodes": 5,
+    "mean_total_reward": -1073.8765,
     "mean_format_compliance": 1.0,
     "mean_fallback_rate": 0.0,
-    "mean_final_bank": 311731.535,
+    "mean_final_bank": 320234.364,
     "per_task": {
       "triage_task": {
-        "mean": 0.0184,
-        "stdev": 0.018
+        "mean": 0.0198,
+        "stdev": 0.0218
       },
       "inventory_task": {
         "mean": 0.206,
-        "stdev": 0.4132
+        "stdev": 0.4383
       },
       "profit_task": {
         "mean": 0.99,
@@ -222,16 +127,16 @@
         "stdev": 0.0
       },
       "competitor_response_task": {
-        "mean": 0.3707,
-        "stdev": 0.3632
+        "mean": 0.2684,
+        "stdev": 0.393
       },
       "crisis_recovery_task": {
         "mean": 0.99,
         "stdev": 0.0
       }
     },
-    "composite_training_mean": 0.4048,
-    "composite_all_mean": 0.5942
+    "composite_training_mean": 0.4053,
+    "composite_all_mean": 0.5774
   },
   "provenance": "deterministic"
 }

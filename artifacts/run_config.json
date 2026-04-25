@@ -1,5 +1,5 @@
 {
-  "mode": "full",
+  "mode": "fast",
   "provenance": "heuristic_fallback",
   "adapter_status": "missing",
   "params": {
@@ -8,38 +8,23 @@
       202,
       303,
       404,
-      505,
-      606,
-      707,
-      808,
-      909,
-      1010
+      505
     ],
     "seeds_after": [
       111,
       222,
       333,
       444,
-      555,
-      666,
-      777,
-      888,
-      999,
-      1111
+      555
     ],
     "gen_seeds": [
       1212,
       1313,
       1414,
       1515,
-      1616,
-      1717,
-      1818,
-      1919,
-      2020,
-      2121
+      1616
     ],
-    "pseudo_curve_episodes": 200,
+    "pseudo_curve_episodes": 60,
     "baseline_configs": [
       "D:\\CMS\\configs\\siyaani_fashion.json"
     ]
@@ -55,9 +40,9 @@
   },
   "git": {
     "available": true,
-    "sha": "946a95e6524258489766f8893986a5ac6cb955a6",
-    "branch": "feature/training",
+    "sha": "930841191b84c0d4e12b8ad2126b13de27dda150",
+    "branch": "feature/commerce-ops-v2",
     "env_frozen_tag_present": true
   },
-  "timestamp": "2026-04-25T08:56:04"
+  "timestamp": "2026-04-26T04:30:01"
 }

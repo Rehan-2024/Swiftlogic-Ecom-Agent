@@ -6,22 +6,22 @@
     "w_generalization": 0.15
   },
   "before": {
-    "score": 0.608,
-    "composite_training": 0.4342,
-    "composite_all": 0.6602,
+    "score": 0.59,
+    "composite_training": 0.4107,
+    "composite_all": 0.6321,
     "format_compliance": 1.0
   },
   "after": {
-    "score": 0.6613,
-    "composite_training": 0.4371,
-    "composite_all": 0.657,
+    "score": 0.6944,
+    "composite_training": 0.5216,
+    "composite_all": 0.7023,
     "format_compliance": 1.0,
-    "generalization": 0.8558
+    "generalization": 0.7737
   },
   "delta": {
-    "abs": 0.0533,
-    "pct": 8.76
+    "abs": 0.1044,
+    "pct": 17.7
   },
-  "headline": "0.61 -> 0.66 (+9%)",
+  "headline": "0.59 -> 0.69 (+18%)",
   "provenance": "heuristic_fallback"
 }
