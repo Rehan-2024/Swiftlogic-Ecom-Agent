@@ -1,0 +1,792 @@
+{
+  "config": "configs/siyaani_fashion.json",
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606,
+    707,
+    808,
+    909,
+    1010
+  ],
+  "max_steps": 50,
+  "timestamp": "2026-04-25T01:37:46",
+  "policies": {
+    "wait_only": {
+      "episodes": [
+        {
+          "seed": 101,
+          "steps": 50,
+          "total_reward": -31.6607,
+          "mean_step_reward": -0.633215,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.5247,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 202,
+          "steps": 50,
+          "total_reward": -22.2364,
+          "mean_step_reward": -0.444728,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.3163,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 303,
+          "steps": 50,
+          "total_reward": -33.5638,
+          "mean_step_reward": -0.671276,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6457,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 404,
+          "steps": 50,
+          "total_reward": -28.9856,
+          "mean_step_reward": -0.579712,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8104,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 505,
+          "steps": 50,
+          "total_reward": -27.6842,
+          "mean_step_reward": -0.553684,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6069,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 606,
+          "steps": 50,
+          "total_reward": -29.4645,
+          "mean_step_reward": -0.589289,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8442,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 707,
+          "steps": 50,
+          "total_reward": -23.0874,
+          "mean_step_reward": -0.461748,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.7054,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 808,
+          "steps": 50,
+          "total_reward": -30.0666,
+          "mean_step_reward": -0.601332,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.818,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 909,
+          "steps": 50,
+          "total_reward": -27.7582,
+          "mean_step_reward": -0.555165,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8746,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        },
+        {
+          "seed": 1010,
+          "steps": 50,
+          "total_reward": -32.9912,
+          "mean_step_reward": -0.659824,
+          "final_bank_balance": 225000.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6381,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "wait_only"
+        }
+      ],
+      "summary": {
+        "policy": "wait_only",
+        "n_episodes": 10,
+        "mean_total_reward": -28.7499,
+        "stdev_total_reward": 3.7792,
+        "mean_final_bank": 225000.0,
+        "per_task": {
+          "triage_task": {
+            "mean": 0.01,
+            "stdev": 0.0
+          },
+          "inventory_task": {
+            "mean": 0.01,
+            "stdev": 0.0
+          },
+          "profit_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "stability_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "competitor_response_task": {
+            "mean": 0.6784,
+            "stdev": 0.172
+          },
+          "crisis_recovery_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          }
+        },
+        "composite_training_mean": 0.3367,
+        "composite_all_mean": 0.6114
+      }
+    },
+    "random": {
+      "episodes": [
+        {
+          "seed": 101,
+          "steps": 50,
+          "total_reward": -1403.0064,
+          "mean_step_reward": -28.060128,
+          "final_bank_balance": 314709.42,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "set_price": 8,
+            "negotiate": 10,
+            "restock": 9,
+            "ad_spend": 6,
+            "wait": 9,
+            "refund": 8
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.01,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 202,
+          "steps": 50,
+          "total_reward": -1220.2315,
+          "mean_step_reward": -24.404631,
+          "final_bank_balance": 403153.31,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "negotiate": 14,
+            "restock": 11,
+            "set_price": 6,
+            "ad_spend": 4,
+            "wait": 8,
+            "refund": 7
+          },
+          "grader_scores": {
+            "triage_task": 0.0588,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.01,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 303,
+          "steps": 50,
+          "total_reward": -1165.6839,
+          "mean_step_reward": -23.313678,
+          "final_bank_balance": 384167.55,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 7,
+            "restock": 11,
+            "set_price": 12,
+            "refund": 9,
+            "ad_spend": 4,
+            "negotiate": 7
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.01,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 404,
+          "steps": 50,
+          "total_reward": -701.4912,
+          "mean_step_reward": -14.029824,
+          "final_bank_balance": 220822.43,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 12,
+            "negotiate": 10,
+            "refund": 6,
+            "ad_spend": 8,
+            "restock": 6,
+            "set_price": 8
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8978,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 505,
+          "steps": 50,
+          "total_reward": -878.9694,
+          "mean_step_reward": -17.579388,
+          "final_bank_balance": 278319.11,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "restock": 5,
+            "ad_spend": 8,
+            "negotiate": 11,
+            "set_price": 10,
+            "refund": 7,
+            "wait": 9
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.99,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.4142,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 606,
+          "steps": 50,
+          "total_reward": -1002.2366,
+          "mean_step_reward": -20.044732,
+          "final_bank_balance": 237537.95,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 13,
+            "ad_spend": 8,
+            "restock": 5,
+            "negotiate": 8,
+            "wait": 7,
+            "set_price": 9
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.99,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 707,
+          "steps": 50,
+          "total_reward": -359.5337,
+          "mean_step_reward": -7.190675,
+          "final_bank_balance": 287975.39,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "wait": 11,
+            "set_price": 14,
+            "refund": 5,
+            "negotiate": 8,
+            "ad_spend": 8,
+            "restock": 4
+          },
+          "grader_scores": {
+            "triage_task": 0.0455,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.5646,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 808,
+          "steps": 50,
+          "total_reward": -1186.9406,
+          "mean_step_reward": -23.738812,
+          "final_bank_balance": 404522.94,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "ad_spend": 6,
+            "refund": 5,
+            "negotiate": 6,
+            "set_price": 17,
+            "wait": 6,
+            "restock": 10
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.99,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.0713,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 909,
+          "steps": 50,
+          "total_reward": -1390.4796,
+          "mean_step_reward": -27.809593,
+          "final_bank_balance": 267043.25,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "restock": 10,
+            "set_price": 10,
+            "refund": 9,
+            "wait": 12,
+            "negotiate": 6,
+            "ad_spend": 3
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.3127,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        },
+        {
+          "seed": 1010,
+          "steps": 50,
+          "total_reward": -1713.897,
+          "mean_step_reward": -34.277941,
+          "final_bank_balance": 319064.0,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 9,
+            "restock": 15,
+            "negotiate": 7,
+            "wait": 6,
+            "ad_spend": 8,
+            "set_price": 5
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.4265,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "random"
+        }
+      ],
+      "summary": {
+        "policy": "random",
+        "n_episodes": 10,
+        "mean_total_reward": -1102.247,
+        "stdev_total_reward": 386.559,
+        "mean_final_bank": 311731.535,
+        "per_task": {
+          "triage_task": {
+            "mean": 0.0184,
+            "stdev": 0.018
+          },
+          "inventory_task": {
+            "mean": 0.206,
+            "stdev": 0.4132
+          },
+          "profit_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "stability_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "competitor_response_task": {
+            "mean": 0.3707,
+            "stdev": 0.3632
+          },
+          "crisis_recovery_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          }
+        },
+        "composite_training_mean": 0.4048,
+        "composite_all_mean": 0.5942
+      }
+    },
+    "heuristic": {
+      "episodes": [
+        {
+          "seed": 101,
+          "steps": 50,
+          "total_reward": -758.1574,
+          "mean_step_reward": -15.163147,
+          "final_bank_balance": 257681.09,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 47,
+            "restock": 3
+          },
+          "grader_scores": {
+            "triage_task": 0.01,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.5247,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 202,
+          "steps": 50,
+          "total_reward": -249.5296,
+          "mean_step_reward": -4.990593,
+          "final_bank_balance": 200435.68,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.5,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.3163,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 303,
+          "steps": 50,
+          "total_reward": -243.076,
+          "mean_step_reward": -4.86152,
+          "final_bank_balance": 201348.78,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.25,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6457,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 404,
+          "steps": 50,
+          "total_reward": -197.9098,
+          "mean_step_reward": -3.958195,
+          "final_bank_balance": 205777.58,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.2,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8104,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 505,
+          "steps": 50,
+          "total_reward": -199.8406,
+          "mean_step_reward": -3.996813,
+          "final_bank_balance": 205694.35,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.2,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6069,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 606,
+          "steps": 50,
+          "total_reward": -568.3735,
+          "mean_step_reward": -11.367471,
+          "final_bank_balance": 240760.06,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 48,
+            "restock": 2
+          },
+          "grader_scores": {
+            "triage_task": 0.5,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8442,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 707,
+          "steps": 50,
+          "total_reward": -246.2471,
+          "mean_step_reward": -4.924941,
+          "final_bank_balance": 200684.03,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.5,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.7054,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 808,
+          "steps": 50,
+          "total_reward": -271.2149,
+          "mean_step_reward": -5.424298,
+          "final_bank_balance": 198910.17,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.3333,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.818,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 909,
+          "steps": 50,
+          "total_reward": -194.6594,
+          "mean_step_reward": -3.893189,
+          "final_bank_balance": 206129.88,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.2,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.8746,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        },
+        {
+          "seed": 1010,
+          "steps": 50,
+          "total_reward": -185.6801,
+          "mean_step_reward": -3.713602,
+          "final_bank_balance": 207211.11,
+          "final_customer_satisfaction": 1.0,
+          "action_counts": {
+            "refund": 50
+          },
+          "grader_scores": {
+            "triage_task": 0.3333,
+            "inventory_task": 0.01,
+            "profit_task": 0.99,
+            "stability_task": 0.99,
+            "competitor_response_task": 0.6381,
+            "crisis_recovery_task": 0.99
+          },
+          "policy": "heuristic"
+        }
+      ],
+      "summary": {
+        "policy": "heuristic",
+        "n_episodes": 10,
+        "mean_total_reward": -311.4688,
+        "stdev_total_reward": 192.8565,
+        "mean_final_bank": 212463.273,
+        "per_task": {
+          "triage_task": {
+            "mean": 0.3027,
+            "stdev": 0.1629
+          },
+          "inventory_task": {
+            "mean": 0.01,
+            "stdev": 0.0
+          },
+          "profit_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "stability_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          },
+          "competitor_response_task": {
+            "mean": 0.6784,
+            "stdev": 0.172
+          },
+          "crisis_recovery_task": {
+            "mean": 0.99,
+            "stdev": 0.0
+          }
+        },
+        "composite_training_mean": 0.4342,
+        "composite_all_mean": 0.6602
+      }
+    },
+    "zero_shot_llm": {
+      "status": "pending_colab",
+      "note": "Zero-shot LLM baseline is populated by the training notebook (swiftlogic_grpo_training.ipynb, Part B5) which has access to the Qwen2.5-0.5B-Instruct weights. This stub is overwritten in place on merge."
+    }
+  }
+}

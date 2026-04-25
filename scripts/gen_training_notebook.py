@@ -212,9 +212,17 @@ from training.curriculum import default_curriculum, rolling_mean
 
 WEIGHTS = RewardWeights()
 CURRICULUM = default_curriculum('.')
-MAX_EPISODES = int(os.environ.get('MAX_EPISODES', 200))
-SANITY_EPISODES = int(os.environ.get('SANITY_EPISODES', 30))
-GROUP_SIZE = int(os.environ.get('GRPO_GROUP_SIZE', 8))
+SANITY_EPISODES = int(os.environ.get('SANITY_EPISODES', 20))
+MAX_EPISODES = int(os.environ.get('MAX_EPISODES', 60))
+SANITY_GROUP_SIZE = int(os.environ.get('SANITY_GRPO_GROUP_SIZE', 2))
+FULL_GROUP_SIZE = int(os.environ.get('GRPO_GROUP_SIZE', 4))
+SANITY_MAX_STEPS = int(os.environ.get('SANITY_MAX_STEPS', 30))
+FULL_MAX_STEPS = int(os.environ.get('MAX_STEPS', 120))
+MAX_FALLBACK_RATE = float(os.environ.get('MAX_FALLBACK_RATE', 0.20))
+MAX_REWARD_CV = float(os.environ.get('MAX_REWARD_CV', 2.0))
+MAX_GENERALIZATION_DROP = float(os.environ.get('MAX_GENERALIZATION_DROP', 0.25))
+CURRENT_MAX_STEPS = SANITY_MAX_STEPS
+ROLLOUT_STATS = []
 
 from training.policies import SYSTEM_PROMPT
 from training.rollout import ActionProducer
@@ -248,15 +256,27 @@ def _build_producer_from_completion(completion_text):
 
 
 def _grpo_reward_fn(prompts, completions, **kwargs):
+    global ROLLOUT_STATS
     seeds = kwargs.get('_seeds') or [2026 + i for i in range(len(prompts))]
     config_path = CURRICULUM.current.config_path
     rewards = []
-    breakdown_last = {}
+    batch_stats = []
     for prompt, comp, seed in zip(prompts, completions, seeds):
         producer = _build_producer_from_completion(comp if isinstance(comp, str) else comp[0])
-        rec = rollout_episode(producer, seed=seed, config_path=config_path)
+        rec = rollout_episode(
+            producer,
+            seed=seed,
+            config_path=config_path,
+            max_steps=CURRENT_MAX_STEPS,
+        )
         rewards.append(combined_reward(rec, WEIGHTS))
-        breakdown_last = reward_breakdown(rec, WEIGHTS)
+        batch_stats.append({
+            'seed': int(seed),
+            'fallback_rate': float(rec.fallback_rate),
+            'format_compliance': float(rec.format_compliance),
+            'combined_reward': float(combined_reward(rec, WEIGHTS)),
+        })
+    ROLLOUT_STATS.extend(batch_stats)
     return rewards
 
 
@@ -276,13 +296,15 @@ def sample_prompts(n, seed_base=10000, config_path=None):
 print(f'=== Part B5.5 sanity train ({SANITY_EPISODES} episodes) on {CURRICULUM.current.config_path} ===')
 rewards_log = []
 sanity_ds = sample_prompts(SANITY_EPISODES, seed_base=700000)
+CURRENT_MAX_STEPS = SANITY_MAX_STEPS
+ROLLOUT_STATS = []
 cfg_sanity = GRPOConfig(
     output_dir='artifacts/adapter_checkpoints/sanity',
     num_train_epochs=1,
     learning_rate=5e-6,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
-    num_generations=GROUP_SIZE,
+    num_generations=SANITY_GROUP_SIZE,
     max_completion_length=96,
     max_prompt_length=512,
     logging_steps=1,
@@ -301,18 +323,50 @@ trainer.train()
 sanity_rewards = [float(e.get('reward', 0.0)) for e in trainer.state.log_history if 'reward' in e]
 assert sanity_rewards, 'sanity train produced no rewards'
 assert not any(r != r for r in sanity_rewards), 'NaN in sanity rewards'
-print(f'sanity rewards: first={sanity_rewards[0]:.3f} last={sanity_rewards[-1]:.3f}')
+sanity_first = sanity_rewards[: max(1, len(sanity_rewards)//3)]
+sanity_last = sanity_rewards[-max(1, len(sanity_rewards)//3) :]
+sanity_first_mean = sum(sanity_first) / len(sanity_first)
+sanity_last_mean = sum(sanity_last) / len(sanity_last)
+assert sanity_last_mean > sanity_first_mean, (
+    f'sanity reward not improving: first_mean={sanity_first_mean:.4f} '
+    f'last_mean={sanity_last_mean:.4f}'
+)
+sanity_mean = sum(sanity_rewards) / len(sanity_rewards)
+sanity_var = sum((r - sanity_mean) ** 2 for r in sanity_rewards) / max(1, len(sanity_rewards) - 1)
+sanity_std = sanity_var ** 0.5
+sanity_cv = sanity_std / (abs(sanity_mean) + 1e-6)
+assert sanity_cv <= MAX_REWARD_CV, (
+    f'sanity reward unstable: cv={sanity_cv:.3f} > {MAX_REWARD_CV:.3f}'
+)
+sanity_fallback_mean = (
+    sum(r['fallback_rate'] for r in ROLLOUT_STATS) / len(ROLLOUT_STATS)
+    if ROLLOUT_STATS else 0.0
+)
+assert sanity_fallback_mean <= MAX_FALLBACK_RATE, (
+    f'sanity fallback too high: {sanity_fallback_mean:.3f} > {MAX_FALLBACK_RATE:.3f}'
+)
+print(
+    'sanity checks passed:',
+    {
+        'first_mean': round(sanity_first_mean, 4),
+        'last_mean': round(sanity_last_mean, 4),
+        'cv': round(sanity_cv, 4),
+        'fallback_mean': round(sanity_fallback_mean, 4),
+    }
+)
 
 # ---- full training (Part B6) ----------------------------------------------
 print(f'=== Part B6 full GRPO training ({MAX_EPISODES} episodes, 3-stage curriculum) ===')
 full_ds = sample_prompts(MAX_EPISODES, seed_base=10000)
+CURRENT_MAX_STEPS = FULL_MAX_STEPS
+ROLLOUT_STATS = []
 cfg_full = GRPOConfig(
     output_dir='artifacts/adapter_checkpoints',
     num_train_epochs=1,
     learning_rate=5e-6,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=4,
-    num_generations=GROUP_SIZE,
+    num_generations=FULL_GROUP_SIZE,
     max_completion_length=96,
     max_prompt_length=512,
     logging_steps=5,
@@ -331,6 +385,21 @@ full_trainer.train()
 
 # ---- save artifacts --------------------------------------------------------
 full_rewards = [float(e.get('reward', 0.0)) for e in full_trainer.state.log_history if 'reward' in e]
+full_mean = sum(full_rewards) / len(full_rewards) if full_rewards else 0.0
+full_var = (
+    sum((r - full_mean) ** 2 for r in full_rewards) / max(1, len(full_rewards) - 1)
+    if full_rewards else 0.0
+)
+full_std = full_var ** 0.5
+full_cv = full_std / (abs(full_mean) + 1e-6)
+assert full_cv <= MAX_REWARD_CV, f'full reward unstable: cv={full_cv:.3f} > {MAX_REWARD_CV:.3f}'
+full_fallback_mean = (
+    sum(r['fallback_rate'] for r in ROLLOUT_STATS) / len(ROLLOUT_STATS)
+    if ROLLOUT_STATS else 0.0
+)
+assert full_fallback_mean <= MAX_FALLBACK_RATE, (
+    f'full fallback too high: {full_fallback_mean:.3f} > {MAX_FALLBACK_RATE:.3f}'
+)
 from training.plots import plot_reward_curve
 plot_reward_curve(full_rewards, 'artifacts/reward_curve.png',
                   title=f'GRPO training reward ({MAX_EPISODES} episodes)',
@@ -338,6 +407,21 @@ plot_reward_curve(full_rewards, 'artifacts/reward_curve.png',
 with open('artifacts/training_log.txt', 'w', encoding='utf-8') as f:
     for entry in full_trainer.state.log_history:
         f.write(json.dumps(entry)+'\n')
+with open('artifacts/sanity_report.json', 'w', encoding='utf-8') as f:
+    json.dump(
+        {
+            'sanity_first_mean': sanity_first_mean,
+            'sanity_last_mean': sanity_last_mean,
+            'sanity_cv': sanity_cv,
+            'sanity_fallback_mean': sanity_fallback_mean,
+            'full_cv': full_cv,
+            'full_fallback_mean': full_fallback_mean,
+            'max_fallback_rate': MAX_FALLBACK_RATE,
+            'max_reward_cv': MAX_REWARD_CV,
+        },
+        f,
+        indent=2,
+    )
 model.save_pretrained('artifacts/adapter')
 tokenizer.save_pretrained('artifacts/adapter')
 print('adapter saved to artifacts/adapter')
@@ -352,6 +436,7 @@ from training.plots import plot_before_after_bars
 eval_seeds = [111,222,333,444,555,666,777,888,999,1111]
 trained_producer = build_zero_shot_producer(model, tokenizer)
 after = run_eval_sweep('after_training', trained_producer, eval_seeds, ['configs/siyaani_fashion.json'])
+after['provenance'] = 'trained_adapter'
 write_json(after, 'artifacts/after_metrics.json')
 
 import json
@@ -372,6 +457,7 @@ if os.path.exists('configs/siyaani_fashion_demo.json'):
     gen_configs.append('configs/siyaani_fashion_demo.json')
 
 gen = run_eval_sweep('generalization', trained_producer, [1212,1313,1414,1515,1616,1717,1818,1919,2020,2121], gen_configs)
+gen['provenance'] = 'trained_adapter'
 write_json(gen, 'artifacts/generalization.json')
 
 # Per-config summaries for the chart
@@ -383,6 +469,20 @@ for cfg in gen_configs:
 plot_generalization(per_cfg_summaries, 'artifacts/generalization.png',
                     title='Generalization across configs')
 print('generalization composite means:', {k: s for k,s in gen['summary'].items() if 'composite' in k})
+
+# strict unseen-seed/config gate
+seen_cfg = 'configs/siyaani_fashion.json'
+seen_eps = [e for e in gen['episodes'] if e['config'] == seen_cfg]
+unseen_eps = [e for e in gen['episodes'] if e['config'] != seen_cfg]
+if unseen_eps and seen_eps:
+    from training.eval_utils import summarize_episodes
+    seen_comp = summarize_episodes(seen_eps)['composite_all_mean']
+    unseen_comp = summarize_episodes(unseen_eps)['composite_all_mean']
+    drop = (seen_comp - unseen_comp) / max(1e-6, abs(seen_comp))
+    assert drop <= MAX_GENERALIZATION_DROP, (
+        f'generalization collapse: seen={seen_comp:.4f} unseen={unseen_comp:.4f} '
+        f'drop={drop:.3f} > {MAX_GENERALIZATION_DROP:.3f}'
+    )
 """))
 
 CELLS.append(_cell_code(r"""
