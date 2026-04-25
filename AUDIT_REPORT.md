@@ -5,6 +5,7 @@
 **Engine version line:** `v2.3.0` (ROOT route)
 **Test status at audit time:** **217 passed** in 3.19s (`python -m pytest -q`)
 **Constraints observed:** No code modified; no OpenEnv API / endpoint / schema / discriminated-union changes proposed. Everything grounded in code.
+**Status update (2026-04-26):** current primary Colab training entrypoint is `grpo_single_cell_colab_v5.py`; this report remains a historical full-system audit snapshot.
 
 ---
 

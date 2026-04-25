@@ -1,5 +1,7 @@
 # ROADMAP — OpenEnv RL environment: path to 100/100
 
+Status update (2026-04-26): active Colab training execution path is `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO). Notebook path remains optional.
+
 **What this is (top line):** A **reproducible OpenEnv RL environment** (frozen dynamics + verifiable reward + graders) with a **GRPO training loop** that produces **evidence of learned behavior**—not a moving target where “intelligence” is simulated by changing the world. Judges see: same env, better policy.
 
 **Target:** Raise total judging score from **73.5/100 → 100/100** and land in the winning tier of the Apr '26 OpenEnv Hackathon, with **strong, defensible alignment to Theme 2, Theme 3, and Theme 4** without breaking the system.

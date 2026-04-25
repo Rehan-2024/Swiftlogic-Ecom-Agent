@@ -5,6 +5,8 @@
 > and embedded in the README, but the script lives here so reviewers
 > can fact-check every claim against the artifacts in `artifacts/`.
 >
+> Training entrypoint update (2026-04-26): primary Colab script is `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO); notebook remains alternate.
+>
 > **Composite headline pinned to the same value as the README and
 > [`artifacts/composite_score.json`](artifacts/composite_score.json):
 > `0.61 -> 0.66 (+9%)`** (provenance `heuristic_fallback`; gets

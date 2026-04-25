@@ -40,7 +40,9 @@ with reproducible grading and auditable step-level explanations.
 **Composite score (per [`artifacts/composite_score.json`](artifacts/composite_score.json)): `0.61 -> 0.66 (+9%)`**
 *(provenance: `heuristic_fallback` — these numbers are produced by `scripts/run_full_pipeline.py` so the repo is self-contained for judges; the Colab notebook overwrites them with `provenance: trained_adapter` after a real GRPO run on T4. The headline string lives in the JSON, not the README, so a fresh training run automatically updates this section via `scripts/refresh_readme_headline.py`.)*
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Swiftlogic/CommerceOps-v2/blob/feature/training/swiftlogic_grpo_training.ipynb) — full GRPO + curriculum training, ≈ 90 min on free T4.
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Swiftlogic/CommerceOps-v2/blob/feature/training/swiftlogic_grpo_training.ipynb) — notebook training path.
+
+**Current primary Colab training entrypoint:** `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO script with live logs, fallback diagnostics, before/after metrics, and artifact checklist).
 
 ### How to reproduce
 
@@ -51,8 +53,11 @@ pytest -q                                   # 218+ tests green
 python scripts/run_full_pipeline.py --fast-mode   # ~2 min, regenerates every artifact under artifacts/
 ```
 
-For the actual GRPO training, open the notebook above in Colab — it runs the
-exact same `training/*` modules the local pipeline uses, just on a real GPU.
+For actual GRPO training in Colab, use either:
+- `grpo_single_cell_colab_v5.py` for the fastest end-to-end training/eval pass, or
+- `swiftlogic_grpo_training.ipynb` for notebook-driven workflow.
+
+Both flows are OpenEnv HTTP compatible with this repo's `server/app.py` endpoints.
 
 ### Theme alignment
 
@@ -407,7 +412,7 @@ Final-polish formatting (inference layer only):
 
 ### GRPO training
 
-Open `swiftlogic_grpo_training.ipynb` in Colab. Cells install `trl/transformers`, hook the env over HTTP (`ENV_URL`), run a 200-episode GRPO training loop with the `Thought + Action` explainability prompt, and emit `reward_curve.png`, `before_after_comparison.json`, and `thought_logs.json`.
+Run `grpo_single_cell_colab_v5.py` in Colab for the current lightweight training path. It installs dependencies, connects to env over HTTP (`ENV_URL`), runs GRPO training with live logs, and emits the required artifacts (`before_metrics.json`, `after_metrics.json`, `generalization.json`, `reward_curve.png`, `policy_signature.json`, `composite_score.json`).
 
 ---
 

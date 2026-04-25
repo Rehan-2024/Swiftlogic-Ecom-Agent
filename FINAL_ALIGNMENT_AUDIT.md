@@ -2,6 +2,7 @@
 
 **Evaluator role:** Senior OpenEnv + RL systems reviewer
 **Date:** 2026-04-22
+**Status update (2026-04-26):** this file is a historical audit snapshot. Current primary Colab training entrypoint is `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO with live logs and artifact checklist); notebook path remains available.
 **Mode:** Read-only. No code changes. Brutally honest. Verified against actual runtime behavior, not documentation claims.
 
 **Audited against:**

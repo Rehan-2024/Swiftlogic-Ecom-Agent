@@ -2,16 +2,18 @@
 
 Version: v2.3 line → v2.4.0 (Zero-Gap Enterprise Upgrade) → **v2.5.0 OpenEnv RL Rank-1 release** (current repository state)
 Project type: OpenEnv-compatible autonomous business simulation environment + GRPO training stack
-Primary runtime: FastAPI + Pydantic + config-driven `WorldEngine` + TRL/Unsloth (notebook)
+Primary runtime: FastAPI + Pydantic + config-driven `WorldEngine` + TRL/Unsloth
 OpenEnv spec target: **v0.2.3**
-Composite headline (per [`artifacts/composite_score.json`](artifacts/composite_score.json)): **`0.61 -> 0.66 (+9%)`** (provenance `heuristic_fallback`; the Colab notebook overwrites with `trained_adapter` numbers — see §34.7).
+Composite headline (per [`artifacts/composite_score.json`](artifacts/composite_score.json)): **`0.61 -> 0.66 (+9%)`** (provenance `heuristic_fallback`; Colab training runs overwrite with `trained_adapter` numbers — see §34.7).
+
+**Report refresh (2026-04-26):** the current primary Colab training entrypoint is `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO). The notebook `swiftlogic_grpo_training.ipynb` remains available as an alternate workflow.
 
 **Latest engineering delta (Rank-1 OpenEnv RL track — fully reflected in code, tests, and this report):**
 
 - **Environment frozen.** Tag `release/env-frozen-v2.3` snapshots the surface; everything after is strictly additive (info keys, evaluation-only graders, test coverage, training scaffolding). Enforced in CI via `scripts/check_env_frozen.py`.
 - **Three new evaluation-only graders.** `grade_stability_task`, `grade_competitor_response_task`, `grade_crisis_recovery_task` registered in `ecom_env.py`, `server/app.py::TASKS`, and `openenv.yaml` with `evaluation_only: true`. They never feed the GRPO reward — they exist only to measure generalisation across reward surfaces.
 - **Two new additive `info` keys.** `info["action_quality"]` (`good`/`neutral`/`bad`) and `info["strategy_phase"]` (`reactive`/`adaptive`/`strategic`) plus their `*_reason`/`*_confidence`/`*_note` siblings. Pure post-hoc derivations in `env/world_engine.py::step` — zero state mutation, zero reward dependency, in-band honesty marker.
-- **Full GRPO training stack.** `swiftlogic_grpo_training.ipynb` rewritten around TRL `GRPOTrainer` + Unsloth `FastLanguageModel` (Qwen2.5-0.5B-Instruct, 4-bit QLoRA), with a real `rollout_episode` (schema-validated `EcomAction`, safe wait fallback), combined reward (`α·env + β·Σtraining_graders + γ·format`), 3-stage curriculum (`siyaani_fashion_easy → siyaani_fashion → siyaani_fashion_demo`), and four mandatory baselines (wait, random, heuristic, zero-shot LLM).
+- **Full GRPO training stack.** `grpo_single_cell_colab_v5.py` is the primary Colab path (single-cell, HTTP-first), and `swiftlogic_grpo_training.ipynb` remains the notebook path. Both use env-in-the-loop rollout/reward signals, baseline comparisons, and artifact generation.
 - **Six checked-in RL-proof artifacts.** Every claim from the roadmap §FINAL RL PROOF SUMMARY now lives under `artifacts/`: reward curve, behavior signature, exploration curve, generalization sweep, hard-seed retraining bundle, before/after composite. `scripts/run_full_pipeline.py` regenerates them all (`--smoke-test` / `--fast-mode` / full).
 - **HF Space landing page.** `GET /` is content-negotiated — JSON for tests/contract clients (unchanged), HTML for browsers — and a new `GET /demo` SSE endpoint streams the deterministic 30-step scripted tape from `scripted_demo.py`.
 - **Tests: 271 / 271 green** (was 218; +53 net for landing/demo, training pipeline, evaluation-only graders, info-keys, training sanity, HTTP contract). Deterministic replay verified, zero linter errors, env-freeze diff is additive-only.

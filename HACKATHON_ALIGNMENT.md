@@ -23,8 +23,8 @@ Every ✅/🟡 is anchored to a concrete file / function / config / test so anyo
 | OpenEnv v0.2.3 compliance | ✅ `/reset`, `/step`, `/state`, `/tasks`, `/grader`, `openenv.yaml`, Docker |
 | Environment stability | ✅ 218 / 218 tests passing, deterministic replay, zero lint errors |
 | Reward hacking defences | ✅ 8 independent reward terms + 3 graders, 4 termination guards, price/body caps |
-| Training pipeline (TRL / GRPO) | ✅ `swiftlogic_grpo_training.ipynb` with `GRPOTrainer` + reward curve + before/after |
-| **Unsloth integration** | 🔴 **Not integrated** — guide §10 lists Unsloth as the intended stack. *Action item below.* |
+| Training pipeline (TRL / GRPO) | ✅ Primary path `grpo_single_cell_colab_v5.py` + alternate notebook `swiftlogic_grpo_training.ipynb` |
+| **Unsloth integration** | ✅ Integrated in Colab training path with fallback to transformers+peft |
 | **Mini-blog / 2-min video** | 🔴 **Not in repo** — required minimum per themes doc. *Action item below.* |
 | HuggingFace Spaces deployment | 🟡 `openenv.yaml` + `Dockerfile` ready; **Space URL needs to be confirmed live** |
 | Observable improvement | ✅ `reward_curve.png`, `before_after_comparison.json`, `thought_logs.json` emitted |
@@ -33,7 +33,7 @@ Every ✅/🟡 is anchored to a concrete file / function / config / test so anyo
 | Long-horizon planning | ✅ 50-step episodes, restock lead days, quote TTL, shock duration, compounding cash |
 | World modelling | ✅ economic feedback loops, partial observability, persistent state across 50 steps |
 
-**Bottom line:** the environment, reward design, anti-hacking stack, testing, determinism, explainability, and demo story are all **strong**. The three remediation items are: (1) add Unsloth to the notebook, (2) record the 2-min demo video / mini-blog, (3) confirm the HF Space URL is live and wire it into the README.
+**Bottom line:** the environment, reward design, anti-hacking stack, testing, determinism, explainability, and demo story are all **strong**. Remaining remediation items are: (1) record the 2-min demo video / mini-blog, (2) confirm the HF Space URL is live and wire it into the README.
 
 ---
 
@@ -44,7 +44,7 @@ Every ✅/🟡 is anchored to a concrete file / function / config / test so anyo
 | Requirement | Status | Evidence / Action |
 |---|:---:|---|
 | Usage of OpenEnv (latest release) | ✅ | `requirements.txt` pins `openenv-core` (0.2.3 — latest on PyPI as of 2026-03-28). `openenv.yaml` declares `spec_version: 1`, `name: commerce-ops-v2`, three task descriptors. Endpoints `/reset /step /state /tasks /grader` all implemented in `server/app.py`. |
-| Minimal training script in Colab using Unsloth **or** TRL | 🟡 | `swiftlogic_grpo_training.ipynb` implements TRL `GRPOTrainer` end-to-end (install → env hookup → 200-episode loop → save). **Missing Unsloth wrapper.** Action: add a Cell 1.5 `from unsloth import FastLanguageModel; model, tok = FastLanguageModel.from_pretrained(...)` branch gated by a `USE_UNSLOTH=True` flag. See §Remediation #1. |
+| Minimal training script in Colab using Unsloth **or** TRL | ✅ | `grpo_single_cell_colab_v5.py` is a single-cell Colab script with Unsloth-first loading (`FastLanguageModel`) and transformers+peft fallback. It includes env HTTP checks, GRPO loop, live logs, before/after metrics, and artifact checklist. |
 | Mini-blog (HuggingFace) **or** <2-min YouTube video | 🔴 | No artefact in repo. Action: record a 2-minute Loom/YouTube walking through (i) problem statement, (ii) observation → action → reward demo step, (iii) reward curve, (iv) before/after grader scores. Drop the URL into README. See §Remediation #2. |
 | Hosted on HuggingFace Spaces | 🟡 | `Dockerfile` and `openenv.yaml` are Space-ready; README front-matter declares `sdk: docker`, `app_port: 7860`, `tags: [openenv]`. **Space URL not documented.** Action: `openenv push` the repo and add the live URL to both README and the video. See §Remediation #3. |
 
@@ -146,8 +146,8 @@ The **AI-CEO + Departments + Causal-truth explainability** framing is genuinely 
 |---|:---:|---|
 | Environment | ✅ | `env/world_engine.py` + `ecom_env.py` + `server/app.py` |
 | Verifier / reward | ✅ | 3 graders in `ecom_env.py` + 8 reward terms in `env/reward_engine.py` |
-| TRL trainer | ✅ | `swiftlogic_grpo_training.ipynb::Cell 6` (`GRPOTrainer`) |
-| Unsloth for efficiency | 🔴 | Not wired — **Remediation #1** |
+| TRL trainer | ✅ | `grpo_single_cell_colab_v5.py` (primary) and `swiftlogic_grpo_training.ipynb` (alternate) |
+| Unsloth for efficiency | ✅ | Wired in primary Colab script with transformers+peft fallback |
 | Deployment on OpenEnv / Spaces | 🟡 | Artefacts ready; live URL **Remediation #3** |
 
 ### §1. Pick the right project idea
@@ -247,8 +247,8 @@ We don't have authored-trace data; we have crisp verification. RL-only is the co
 
 | Stack component | Status | Action if missing |
 |---|:---:|---|
-| TRL | ✅ | `swiftlogic_grpo_training.ipynb` Cell 6 |
-| **Unsloth** | 🔴 | **Remediation #1** |
+| TRL | ✅ | `grpo_single_cell_colab_v5.py` training loop |
+| **Unsloth** | ✅ | `grpo_single_cell_colab_v5.py` model load path |
 | OpenEnv | ✅ | `openenv-core==0.2.3` in `requirements.txt` |
 
 ### §11. Prefer GRPO / RLVR
@@ -265,7 +265,7 @@ We don't have authored-trace data; we have crisp verification. RL-only is the co
 |---|:---:|---|
 | Tight environment loop | ✅ | 218 tests run in < 3 s on a single worker; a single `/step` averages sub-millisecond on the hot path (cached config slices, structural `_snapshot_state`, env-local RNG). |
 | Low-overhead execution | ✅ | Lazy imports for OpenAI + Matplotlib (Audit MINOR #9). |
-| Efficient model runtime | 🔴 | Blocked on Unsloth — see §10 / Remediation #1. |
+| Efficient model runtime | ✅ | Unsloth-first loading path in primary Colab script |
 
 ### §13. Deploy your environment early
 
@@ -365,7 +365,7 @@ See §3 above. Our primary theme is 3.1; strong coverage of 1 and 2.
 
 ## 5. Gap Summary & Remediation Plan
 
-### 🔴 Remediation #1 — Integrate Unsloth in the GRPO notebook
+### ✅ Remediation #1 — Unsloth integration completed
 
 **Why:** Guide §0 and §10 list Unsloth as part of the **intended stack**. Judges will look for it. Also unlocks 4-bit QLoRA-style training, which is essential on Colab T4.
 
