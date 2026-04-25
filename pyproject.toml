@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "commerce-ops-v1"
-version = "1.0.0"
-description = "AI Autonomous Startup Operator Environment"
+name = "commerce-ops-v2"
+version = "2.0.0"
+description = "Swiftlogic CommerceOps v2 - Autonomous AI Startup Operator (Meta x Scaler OpenEnv Hackathon Finale)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,7 +14,8 @@ dependencies = [
     "openai",
     "requests",
     "uvicorn",
-    "fastapi"
+    "fastapi",
+    "numpy>=1.24"
 ]
 
 [project.scripts]

@@ -1,0 +1,506 @@
+{
+  "label": "generalization",
+  "timestamp": "2026-04-26T04:30:04",
+  "seeds": [
+    1212,
+    1313,
+    1414,
+    1515,
+    1616
+  ],
+  "configs": [
+    "D:\\CMS\\configs\\siyaani_fashion.json",
+    "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+    "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+    "D:\\CMS\\configs\\medplus_pharmacy.json",
+    "D:\\CMS\\configs\\stackbase_saas.json"
+  ],
+  "episodes": [
+    {
+      "seed": 1212,
+      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
+      "steps": 50,
+      "total_reward": -212.9552,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 204260.62,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6731,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1313,
+      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
+      "steps": 50,
+      "total_reward": -254.2758,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 200337.26,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.5,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7545,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1414,
+      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
+      "steps": 50,
+      "total_reward": -245.546,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 201031.41,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4084,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1515,
+      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
+      "steps": 50,
+      "total_reward": -233.9277,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 202558.41,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.25,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.8437,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1616,
+      "config": "D:\\CMS\\configs\\siyaani_fashion.json",
+      "steps": 50,
+      "total_reward": -253.7275,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 200361.27,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6511,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1212,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+      "steps": 30,
+      "total_reward": -68.8516,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 387417.93,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.99,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7336,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1313,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+      "steps": 30,
+      "total_reward": -1808.3091,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 365803.23,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.99,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7218,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1414,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+      "steps": 30,
+      "total_reward": -391.0358,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 425222.51,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.8634,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1515,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+      "steps": 30,
+      "total_reward": -59.582,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 388310.11,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.5,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7313,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1616,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_easy.json",
+      "steps": 30,
+      "total_reward": -1029.6528,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 402720.76,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.99,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6781,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1212,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+      "steps": 50,
+      "total_reward": -214.4057,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 203943.61,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4921,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1313,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+      "steps": 50,
+      "total_reward": -619.7957,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 235640.68,
+      "final_customer_satisfaction": 0.872,
+      "grader_scores": {
+        "triage_task": 0.25,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.8802,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1414,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+      "steps": 50,
+      "total_reward": -1555.2569,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 312297.58,
+      "final_customer_satisfaction": 0.99,
+      "grader_scores": {
+        "triage_task": 0.3333,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6437,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1515,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+      "steps": 50,
+      "total_reward": -722.1954,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 176921.03,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.5,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.5784,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1616,
+      "config": "D:\\CMS\\configs\\siyaani_fashion_demo.json",
+      "steps": 50,
+      "total_reward": -292.4156,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 196084.9,
+      "final_customer_satisfaction": 0.954,
+      "grader_scores": {
+        "triage_task": 0.3333,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.8668,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1212,
+      "config": "D:\\CMS\\configs\\medplus_pharmacy.json",
+      "steps": 50,
+      "total_reward": -549.2913,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 113013.95,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4612,
+        "crisis_recovery_task": 0.9127
+      }
+    },
+    {
+      "seed": 1313,
+      "config": "D:\\CMS\\configs\\medplus_pharmacy.json",
+      "steps": 50,
+      "total_reward": -599.9936,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 107444.51,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6499,
+        "crisis_recovery_task": 0.8431
+      }
+    },
+    {
+      "seed": 1414,
+      "config": "D:\\CMS\\configs\\medplus_pharmacy.json",
+      "steps": 50,
+      "total_reward": -593.0374,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 108543.1,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.125,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.6727,
+        "crisis_recovery_task": 0.8568
+      }
+    },
+    {
+      "seed": 1515,
+      "config": "D:\\CMS\\configs\\medplus_pharmacy.json",
+      "steps": 50,
+      "total_reward": -476.2293,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 119540.39,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.1507,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1616,
+      "config": "D:\\CMS\\configs\\medplus_pharmacy.json",
+      "steps": 50,
+      "total_reward": -528.4056,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 114968.72,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.3333,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.3003,
+        "crisis_recovery_task": 0.9371
+      }
+    },
+    {
+      "seed": 1212,
+      "config": "D:\\CMS\\configs\\stackbase_saas.json",
+      "steps": 50,
+      "total_reward": -114.05,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 39251.17,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.3333,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.419,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1313,
+      "config": "D:\\CMS\\configs\\stackbase_saas.json",
+      "steps": 50,
+      "total_reward": -139.0817,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 41322.45,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.99,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4675,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1414,
+      "config": "D:\\CMS\\configs\\stackbase_saas.json",
+      "steps": 50,
+      "total_reward": -156.4958,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 46826.97,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.1667,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.8434,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1515,
+      "config": "D:\\CMS\\configs\\stackbase_saas.json",
+      "steps": 50,
+      "total_reward": -177.7218,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 42499.04,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4844,
+        "crisis_recovery_task": 0.99
+      }
+    },
+    {
+      "seed": 1616,
+      "config": "D:\\CMS\\configs\\stackbase_saas.json",
+      "steps": 50,
+      "total_reward": -163.8212,
+      "format_compliance": 1.0,
+      "fallback_rate": 0.0,
+      "final_bank": 42944.65,
+      "final_customer_satisfaction": 1.0,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.99,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.4779,
+        "crisis_recovery_task": 0.99
+      }
+    }
+  ],
+  "summary": {
+    "n_episodes": 25,
+    "mean_total_reward": -458.4024,
+    "mean_format_compliance": 1.0,
+    "mean_fallback_rate": 0.0,
+    "mean_final_bank": 195170.6504,
+    "per_task": {
+      "triage_task": {
+        "mean": 0.3074,
+        "stdev": 0.3489
+      },
+      "inventory_task": {
+        "mean": 0.2452,
+        "stdev": 0.4272
+      },
+      "profit_task": {
+        "mean": 0.99,
+        "stdev": 0.0
+      },
+      "stability_task": {
+        "mean": 0.99,
+        "stdev": 0.0
+      },
+      "competitor_response_task": {
+        "mean": 0.6179,
+        "stdev": 0.1899
+      },
+      "crisis_recovery_task": {
+        "mean": 0.9736,
+        "stdev": 0.0415
+      }
+    },
+    "composite_training_mean": 0.5142,
+    "composite_all_mean": 0.6873
+  },
+  "provenance": "heuristic_fallback"
+}

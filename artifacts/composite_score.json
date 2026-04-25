@@ -1,0 +1,27 @@
+{
+  "weights": {
+    "w_training": 0.35,
+    "w_all": 0.35,
+    "w_format": 0.15,
+    "w_generalization": 0.15
+  },
+  "before": {
+    "score": 0.59,
+    "composite_training": 0.4107,
+    "composite_all": 0.6321,
+    "format_compliance": 1.0
+  },
+  "after": {
+    "score": 0.6944,
+    "composite_training": 0.5216,
+    "composite_all": 0.7023,
+    "format_compliance": 1.0,
+    "generalization": 0.7737
+  },
+  "delta": {
+    "abs": 0.1044,
+    "pct": 17.7
+  },
+  "headline": "0.59 -> 0.69 (+18%)",
+  "provenance": "heuristic_fallback"
+}
