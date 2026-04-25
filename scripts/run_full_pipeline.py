@@ -217,6 +217,13 @@ def stage_generalization(
     demo_cfg = ROOT / "configs" / "siyaani_fashion_demo.json"
     if demo_cfg.exists():
         configs.append(str(demo_cfg))
+    # Round-2 plan section 3.3 + 10.6 - the unseen-config gate.
+    # The dashboard's anti-fake audit (C6_generalization_unseen) blocks merge
+    # unless these two business configs appear in generalization.json.
+    for unseen_name in ("medplus_pharmacy.json", "stackbase_saas.json"):
+        unseen_cfg = ROOT / "configs" / unseen_name
+        if unseen_cfg.exists():
+            configs.append(str(unseen_cfg))
 
     producer = trained_producer or build_heuristic_producer()
     bundle = run_eval_sweep("generalization", producer, params["gen_seeds"], configs)

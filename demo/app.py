@@ -1,177 +1,507 @@
-import gradio as gr
-import requests
-import json
-import os
-import time
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel
+"""Round-2 Gradio dashboard.
 
-# --- CONFIGURATION ---
-ENV_URL = os.environ.get("ENV_URL", "http://localhost:7860")
-ARTIFACTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "artifacts")
-ADAPTER_DIR = os.path.join(ARTIFACTS_DIR, "swiftlogic_grpo_adapter")
+Composition only - all logic lives in the modules:
+  backend_client, policy, episode_runner, artifact_loader, components, story_tab.
 
-BASE_MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct" 
-
-# --- DEEP TECH DARK THEME CSS ---
-custom_css = """
-body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-.gradio-container { max-width: 1200px !important; }
-h1, h2, h3 { color: #f8fafc !important; font-weight: 800 !important; letter-spacing: -0.5px; }
-.stat-card { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 25px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); text-align: center; border: 1px solid #334155; border-top: 4px solid #38bdf8;}
-.stat-value { font-size: 32px; font-weight: 900; color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
-.stat-value-good { color: #10b981; text-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
-.stat-value-bad { color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.2); }
-.stat-label { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;}
-.log-box { background-color: #020617; color: #10b981; font-family: 'Fira Code', monospace; padding: 20px; border-radius: 8px; border: 1px solid #1e293b; height: 500px; overflow-y: auto; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
-.story-text { font-size: 1.15rem; line-height: 1.7; color: #cbd5e1; background: #1e293b; padding: 20px; border-radius: 8px; border-left: 4px solid #8b5cf6;}
+Tabs:
+  1. Story         - 4-chapter narrative with real photos.
+  2. Live Run      - real /reset + /step + /grader against the OpenEnv backend.
+  3. Training Proof- artifacts + action-success comparison (Phase 3 + 4).
+  4. Generalisation- multi-config performance evidence (Phase 6.3).
 """
 
-# --- GLOBAL MODEL CACHE ---
-model = None
-tokenizer = None
+from __future__ import annotations
 
-def load_ai_model():
-    global model, tokenizer
-    if model is not None:
-        return
-    
-    print("Loading Base Model & Tokenizer...")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
-    base_model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL_NAME, 
-        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-        device_map="auto" if device == "cuda" else None
+import html
+import json
+import logging
+import os
+import sys
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import gradio as gr
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from demo.artifact_loader import (  # noqa: E402
+    artifact_image_path,
+    freshness_summary,
+    generalization_covers_unseen_configs,
+    judge_readiness,
+    load_action_success,
+    load_after_metrics,
+    load_before_metrics,
+    load_composite_score,
+    load_failure_vs_recovery,
+    load_generalization,
+    load_pipeline_manifest,
+    load_policy_signature,
+    policy_signatures_distinct,
+)
+from demo.backend_client import BackendClient, BackendError  # noqa: E402
+from demo.components import (  # noqa: E402
+    banner,
+    evidence_unavailable,
+    fmt_currency,
+    fmt_delta,
+    fmt_pct,
+    metric_card,
+    metric_row,
+    pill,
+    table,
+)
+from demo.episode_runner import LIVE_RUNS_DIR, run_ab_comparison, run_episode  # noqa: E402
+from demo.policy import (  # noqa: E402
+    ALL_POLICIES,
+    POLICY_BASELINE_WAIT,
+    POLICY_BASELINE_ZERO_SHOT,
+    POLICY_TRAINED,
+)
+from demo.story_tab import render_story_html  # noqa: E402
+
+logger = logging.getLogger("commerceops.demo.app")
+
+THEME_CSS = (Path(__file__).parent / "theme.css").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Header / startup banner
+# ---------------------------------------------------------------------------
+
+def _header_html() -> str:
+    readiness = judge_readiness()
+    pill_html = pill("JUDGE-READY", kind="ready") if readiness.ready else pill("PRE-TRAINING PREVIEW", kind="pre")
+    return (
+        '<div class="r2-card" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'
+        '<div>'
+        '<h1 style="margin:0;font-size:24px;">Siyaani Commerce - AI CEO</h1>'
+        f'<p style="margin:4px 0 0 0;color:var(--ink-soft);font-size:13.5px;">'
+        f'Autonomous storefront operator trained with GRPO on the OpenEnv contract. '
+        f'Pipeline provenance: <strong>{html.escape(readiness.provenance.value)}</strong>, '
+        f'adapter: <strong>{html.escape(readiness.adapter_status)}</strong>.'
+        '</p>'
+        '</div>'
+        f'<div>{pill_html}</div>'
+        '</div>'
     )
-    
-    if os.path.exists(ADAPTER_DIR):
-        print("Loading Trained RL Adapter...")
-        model = PeftModel.from_pretrained(base_model, ADAPTER_DIR)
+
+
+def _startup_diagnostics_html() -> str:
+    bc = BackendClient()
+    health = bc.quick_self_check()
+    readiness = judge_readiness()
+    gen_check = generalization_covers_unseen_configs()
+    sig_check = policy_signatures_distinct()
+    rows: List[str] = []
+
+    if health["ok"]:
+        rows.append(banner(
+            "Backend reachable",
+            f"<code>{html.escape(health['base_url'])}</code> - <strong>{health.get('tasks_count','?')}</strong> tasks exposed.",
+            kind="good",
+        ))
     else:
-        print("Warning: No adapter found. Running Zero-Shot.")
-        model = base_model
-        
-    model.eval()
+        details = "; ".join(html.escape(e) for e in health["errors"])
+        rows.append(banner(
+            "Backend unreachable",
+            f"<code>{html.escape(health['base_url'])}</code> - {details}. "
+            "The Live Run tab will be disabled until the backend responds.",
+            kind="danger",
+        ))
 
-def get_artifact_image(filename):
-    path = os.path.join(ARTIFACTS_DIR, filename)
-    return path if os.path.exists(path) else None
+    if not readiness.ready:
+        why = "; ".join(html.escape(r) for r in readiness.reasons)
+        rows.append(banner(
+            "Pre-training preview - not judge-ready",
+            f"Provenance gate failed: {why}. "
+            "Run the GRPO pipeline (grpo_single_cell_colab_v5.py) to flip provenance to grpo_trained.",
+            kind="warn",
+        ))
+    else:
+        rows.append(banner(
+            "Authenticity gate green",
+            "All artifacts trained, adapter present, signatures distinct.",
+            kind="good",
+        ))
 
-def get_metrics():
-    path = os.path.join(ARTIFACTS_DIR, "composite_score.json")
-    if os.path.exists(path):
-        with open(path, "r") as f:
-            return json.load(f)
-    return {"composite_score_baseline": 0.35, "composite_score_trained": 0.81, "improvement_pct": "+131%"}
+    if not gen_check["ok"]:
+        rows.append(banner(
+            "Generalisation evidence incomplete",
+            f"Missing unseen configs: <code>{', '.join(gen_check['missing']) or 'none'}</code>. "
+            "Re-run the generalisation pass over medplus_pharmacy and stackbase_saas.",
+            kind="warn",
+        ))
 
-def run_live_episode(model_type, seed, progress=gr.Progress()):
-    try:
-        obs = requests.post(f"{ENV_URL}/reset", json={"seed": int(seed)}, timeout=10).json()["observation"]
-    except Exception as e:
-        yield f"CRITICAL ERROR: Cannot connect to Environment at {ENV_URL}.", "₹0", "OFFLINE"
+    if not sig_check["ok"] and sig_check["hashes"]:
+        rows.append(banner(
+            "Policy signature collision",
+            "Trained-policy hash equals heuristic-policy hash - the dashboard will show identical distributions. "
+            "Re-train and re-emit policy_signature.json.",
+            kind="warn",
+        ))
+
+    return "".join(rows)
+
+
+# ---------------------------------------------------------------------------
+# Live tab
+# ---------------------------------------------------------------------------
+
+def _format_step_log(records: List[Dict[str, Any]]) -> str:
+    lines = []
+    for r in records:
+        a = r["action"]
+        a_type = a.get("action_type", "wait")
+        params = {k: v for k, v in a.items() if k != "action_type"}
+        params_str = json.dumps(params, separators=(",", ":")) if params else ""
+        intent = r.get("intent") or "-"
+        success_flag = "ok" if r.get("success") else "fail"
+        fb = f" [fallback:{r.get('fallback')}]" if r.get("fallback") else ""
+        err = f" err={r.get('info_error')}" if r.get("info_error") else ""
+        lines.append(
+            f"day {r['step']:02d}  {a_type:<10} {params_str:<48}  "
+            f"reward={r['reward']:>+7.3f}  bank={r['bank_balance']:>10.2f}  "
+            f"intent={intent}  [{success_flag}]{fb}{err}"
+        )
+    return "\n".join(lines)
+
+
+def _final_cards_html(trace: Dict[str, Any]) -> str:
+    bank_tone = "good"
+    if trace.get("bankrupt"):
+        bank_tone = "bad"
+    elif trace.get("final_bank", 0) < trace.get("starting_bank", 0):
+        bank_tone = "warn"
+    return metric_row([
+        metric_card("Final bank", fmt_currency(trace.get("final_bank", 0.0)), tone=bank_tone),
+        metric_card("Total reward", f"{trace.get('total_reward', 0.0):+.2f}"),
+        metric_card("Steps", str(trace.get("n_steps", 0))),
+        metric_card("Fallbacks", str(trace.get("fallback_count", 0)), tone="warn" if trace.get("fallback_count", 0) > 0 else "neutral"),
+        metric_card("Policy", trace.get("policy_type", "-")),
+    ])
+
+
+def _grader_card_html(trace: Dict[str, Any]) -> str:
+    scores = trace.get("grader_scores", {}) or {}
+    if "__error__" in scores:
+        return banner("Grader unavailable", html.escape(scores["__error__"]), kind="warn")
+    rows = [[k, f"{float(v):.4f}"] for k, v in sorted(scores.items()) if k != "__error__"]
+    return table(["Task", "Score"], rows, empty_msg="grader returned no scores")
+
+
+def _ab_table_html(comparison: Dict[str, Any]) -> str:
+    a = comparison["summary"]["a"]
+    b = comparison["summary"]["b"]
+    rows = [
+        ["Final bank",     fmt_currency(a.get("final_bank", 0.0)), fmt_currency(b.get("final_bank", 0.0))],
+        ["Total reward",   f"{a.get('total_reward', 0.0):+.2f}",   f"{b.get('total_reward', 0.0):+.2f}"],
+        ["Bankrupt",       "yes" if a.get("bankrupt") else "no",   "yes" if b.get("bankrupt") else "no"],
+        ["Steps",          str(a.get("n_steps", 0)),               str(b.get("n_steps", 0))],
+        ["Fallbacks",      str(a.get("fallback_count", 0)),        str(b.get("fallback_count", 0))],
+        ["Action entropy", f"{a.get('entropy', 0.0):.3f}",         f"{b.get('entropy', 0.0):.3f}"],
+    ]
+    headers = ["Metric", a.get("policy", "A"), b.get("policy", "B")]
+    return table(headers, rows)
+
+
+def _do_run_single(policy_name: str, seed: int, business_id: str):
+    """Streaming generator for the Live tab single-run button."""
+    bc = BackendClient()
+    log_lines: List[str] = []
+    final_metrics_html = ""
+    grader_html = ""
+    summary_banner = banner("Running...", f"Policy <strong>{html.escape(policy_name)}</strong> on seed {int(seed)}.", kind="neutral")
+
+    def on_step(rec: Dict[str, Any]) -> None:
+        log_lines.append(_format_step_log([rec]))
+
+    yield summary_banner, "\n".join(log_lines), final_metrics_html, grader_html, ""
+
+    bid = business_id.strip() or None
+    trace = run_episode(policy_name, int(seed), backend=bc, business_id=bid, on_step=on_step)
+
+    if "error" in trace:
+        err_banner = banner("Run failed", html.escape(trace["error"]), kind="danger")
+        yield err_banner, "\n".join(log_lines), "", "", json.dumps(trace, indent=2, default=str)
         return
 
-    if "Trained" in model_type or "Zero-Shot" in model_type:
-        yield "▶ SYSTEM BOOT: Loading Neural Weights into VRAM...\n", "₹0", "LOADING..."
-        load_ai_model()
+    final_metrics_html = _final_cards_html(trace)
+    grader_html = _grader_card_html(trace)
+    summary_banner = banner(
+        "Run complete",
+        f"run_id <code>{html.escape(trace['run_id'])}</code> persisted to "
+        f"<code>{html.escape(str(trace.get('_path', '')))}</code>.",
+        kind="good",
+    )
+    yield summary_banner, "\n".join(log_lines), final_metrics_html, grader_html, json.dumps({
+        "run_id": trace["run_id"],
+        "endpoint_call_counts": trace["endpoint_call_counts"],
+        "starting_bank": trace.get("starting_bank"),
+        "final_bank": trace.get("final_bank"),
+        "total_reward": trace.get("total_reward"),
+        "fallback_count": trace.get("fallback_count"),
+        "bankrupt": trace.get("bankrupt"),
+        "grader_scores": trace.get("grader_scores"),
+        "git_sha": trace.get("git_sha"),
+        "adapter_sha": trace.get("adapter_sha"),
+    }, indent=2, default=str)
 
-    log_output = f"▶ SYSTEM BOOT: Initializing {model_type.upper()} AI CEO (Seed: {seed})\n"
-    log_output += "━"*60 + "\n"
-    yield log_output, f"₹{obs['bank']:,.2f}", "Healthy"
 
-    device = model.device if model else "cpu"
+def _do_run_ab(seed: int, business_id: str):
+    bid = business_id.strip() or None
+    summary = banner(
+        "Running A/B comparison",
+        f"Same seed {int(seed)} for <strong>{POLICY_BASELINE_ZERO_SHOT}</strong> and <strong>{POLICY_TRAINED}</strong>.",
+        kind="neutral",
+    )
+    yield summary, "", "", ""
+    cmp_obj = run_ab_comparison(int(seed), POLICY_BASELINE_ZERO_SHOT, POLICY_TRAINED, business_id=bid)
+    table_html = _ab_table_html(cmp_obj)
+    summary = banner(
+        "A/B comparison complete",
+        f"comparison_id <code>{html.escape(cmp_obj['comparison_id'])}</code> at "
+        f"<code>{html.escape(str(cmp_obj.get('_path', '')))}</code>. "
+        f"Same seed: <strong>{int(seed)}</strong>.",
+        kind="good",
+    )
+    yield summary, table_html, json.dumps(cmp_obj["summary"], indent=2, default=str), json.dumps({
+        "comparison_id": cmp_obj["comparison_id"],
+        "run_a_id": cmp_obj["run_a"]["run_id"],
+        "run_b_id": cmp_obj["run_b"]["run_id"],
+        "seed": cmp_obj["seed"],
+        "business_id": cmp_obj["business_id"],
+    }, indent=2, default=str)
 
-    for step in progress.tqdm(range(1, 51), desc="Simulating Market Dynamics"):
-        if "Baseline (Wait-Only)" in model_type:
-            action = {"action_type": "wait"}
-        else:
-            prompt = f"Observation: {json.dumps(obs)}\nAction JSON:"
-            inputs = tokenizer(prompt, return_tensors="pt").to(device)
-            
-            with torch.no_grad():
-                outputs = model.generate(**inputs, max_new_tokens=64, temperature=0.0)
-            
-            text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-            try:
-                action = json.loads(text)
-            except:
-                action = {"action_type": "wait"} 
 
-        r = requests.post(f"{ENV_URL}/step", json=action).json()
-        obs = r["observation"]
-        info = r.get("info", {})
-        
-        intent = info.get("intent", "strategic_hold")
-        quality = info.get("action_quality", "optimal")
-        
-        log_output += f"DAY {step:02d} | ACTION: {action.get('action_type', 'wait').upper():<10} | INTENT: {intent}\n"
-        log_output += f"        └─ Bank: ₹{obs['bank']:,.2f} | Assessment: {quality.upper()}\n"
-        
-        status = "BANKRUPT ☠️" if obs['bank'] <= 0 else "HEALTHY 🟢"
-        yield log_output, f"₹{obs['bank']:,.2f}", status
-        
-        if r["done"]: 
-            log_output += "\n" + "━"*60 + "\n▶ SIMULATION TERMINATED\n"
-            yield log_output, f"₹{obs['bank']:,.2f}", status
-            break
+# ---------------------------------------------------------------------------
+# Training Proof tab
+# ---------------------------------------------------------------------------
 
-with gr.Blocks(css=custom_css, title="CommerceOps AI") as demo:
-    gr.HTML("""
-    <div style='text-align: center; margin-bottom: 30px; padding-top: 20px;'>
-        <h1 style='font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px;'>
-            <span style='color: #38bdf8;'>Siyaani</span> Commerce AI
-        </h1>
-        <p style='color:#94a3b8; font-size: 1.2rem; font-weight: 300;'>Autonomous E-Commerce Operator • Trained via GRPO</p>
-    </div>
-    """)
-    
-    with gr.Tabs():
-        with gr.TabItem("⚙️ Live Simulation Terminal"):
-            with gr.Row():
-                with gr.Column(scale=1):
-                    model_choice = gr.Radio(
-                        ["Baseline (Wait-Only)", "Baseline (Zero-Shot)", "Trained (GRPO Weights)"], 
-                        label="Select AI Policy Weights", 
-                        value="Trained (GRPO Weights)"
-                    )
-                    seed_input = gr.Number(value=2026, label="Market Seed", precision=0)
-                    run_btn = gr.Button("🚀 EXECUTE 50-DAY CYCLE", variant="primary", size="lg")
-                    
-                    gr.HTML("<br>")
-                    bank_display = gr.HTML("<div class='stat-card'><div class='stat-label'>Liquid Capital</div><div class='stat-value' id='bank-val'>₹50,000</div></div>")
-                    gr.HTML("<br>")
-                    status_display = gr.HTML("<div class='stat-card'><div class='stat-label'>System Status</div><div class='stat-value stat-value-good'>HEALTHY 🟢</div></div>")
-                        
-                with gr.Column(scale=2):
-                    log_output = gr.Textbox(label="LIVE CEO NEURAL TRACE", lines=20, elem_classes="log-box", show_label=True)
+def _proof_metric_table_html() -> str:
+    before = load_before_metrics()
+    after = load_after_metrics()
+    composite = load_composite_score()
+    if not before and not after and not composite:
+        return evidence_unavailable("before_metrics.json / after_metrics.json / composite_score.json")
+    rows: List[List[Any]] = []
+    if composite:
+        b_score = composite.get("before", {}).get("score")
+        a_score = composite.get("after", {}).get("score")
+        if isinstance(b_score, (int, float)) and isinstance(a_score, (int, float)):
+            rows.append(["Composite score", f"{b_score:.4f}", f"{a_score:.4f}", fmt_delta(b_score, a_score)])
+    if before and after:
+        for key, label in [
+            ("avg_reward", "Avg reward"),
+            ("avg_profit", "Avg profit"),
+            ("stockout_rate", "Stockout rate"),
+        ]:
+            bv = before.get(key)
+            av = after.get(key)
+            if isinstance(bv, (int, float)) and isinstance(av, (int, float)):
+                rows.append([label, f"{bv:.4f}", f"{av:.4f}", fmt_delta(bv, av)])
+    fvr = load_failure_vs_recovery()
+    if isinstance(fvr, dict):
+        b_rate = fvr.get("baseline_bankruptcy_rate")
+        a_rate = fvr.get("trained_bankruptcy_rate")
+        if isinstance(b_rate, (int, float)) and isinstance(a_rate, (int, float)):
+            rows.append(["Bankruptcy rate", f"{b_rate*100:.1f}%", f"{a_rate*100:.1f}%", fmt_delta(b_rate, a_rate)])
+    if not rows:
+        return evidence_unavailable("metrics keys not found in before/after JSONs")
+    return table(["Metric", "Baseline", "Trained", "Delta"], rows)
 
-            run_btn.click(fn=run_live_episode, inputs=[model_choice, seed_input], outputs=[log_output, bank_display, status_display])
 
-        with gr.TabItem("📖 The AI's Journey (Proof of RL)"):
-            metrics = get_metrics()
-            
-            gr.HTML(f"""
-            <div style='display: flex; gap: 20px; margin-bottom: 30px;'>
-                <div class='stat-card' style='flex: 1;'><div class='stat-label'>Baseline Score</div><div class='stat-value stat-value-bad'>{metrics.get('composite_score_baseline', '0.35')}</div></div>
-                <div class='stat-card' style='flex: 1;'><div class='stat-label'>Trained Score</div><div class='stat-value stat-value-good'>{metrics.get('composite_score_trained', '0.81')}</div></div>
-                <div class='stat-card' style='flex: 1;'><div class='stat-label'>Net Improvement</div><div class='stat-value' style='color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.4);'>{metrics.get('improvement_pct', '+131%')}</div></div>
-            </div>
-            """)
+def _action_success_table_html() -> str:
+    base = load_action_success("baseline_zero_shot")
+    trained = load_action_success("trained")
+    if not base and not trained:
+        return evidence_unavailable("action_success_baseline_zero_shot.json / action_success_trained.json")
+    actions = sorted(set((base.get("by_action") or {}).keys()) | set((trained.get("by_action") or {}).keys()))
+    rows: List[List[Any]] = []
+    for a in actions:
+        b = (base.get("by_action") or {}).get(a, {})
+        t = (trained.get("by_action") or {}).get(a, {})
+        rows.append([
+            a,
+            f"{b.get('attempts', 0)} / {b.get('successes', 0)}",
+            f"{(b.get('success_rate') or 0.0):.2f}",
+            f"{t.get('attempts', 0)} / {t.get('successes', 0)}",
+            f"{(t.get('success_rate') or 0.0):.2f}",
+        ])
+    return table(["Action", "Baseline atts/succ", "Baseline rate", "Trained atts/succ", "Trained rate"], rows)
 
-            with gr.Row():
-                with gr.Column():
-                    gr.HTML("<div class='story-text'><strong>Picture 1: The Awakening.</strong><br>We started with a standard LLM. It understood JSON, but it didn't understand <i>business</i>. By hooking Qwen2.5 to our OpenEnv physics engine and using GRPO (Group Relative Policy Optimization), the model was forced to live through thousands of bankruptcies. The curve below is the exact moment the weights shifted, and the AI learned how to survive market shocks.</div><br>")
-                    img1 = get_artifact_image("reward_curve.png")
-                    if img1: gr.Image(img1, show_label=False, show_download_button=False)
-                    else: gr.Markdown("*reward_curve.png missing - Waiting for training...*")
 
-                with gr.Column():
-                    gr.HTML("<div class='story-text'><strong>Picture 2: From Chaos to Strategy.</strong><br>A high score isn't enough; we had to prove the AI's actual <i>thinking</i> evolved. This chart shows Action Entropy (Exploration Decay). Early on, the AI was guessing wildly (high entropy). By Episode 25, it stopped guessing and locked into a structured, deliberate strategy of strategic holding, dynamic pricing, and precision restocking.</div><br>")
-                    img2 = get_artifact_image("exploration_curve.png")
-                    if img2: gr.Image(img2, show_label=False, show_download_button=False)
-                    else: gr.Markdown("*exploration_curve.png missing - Waiting for training...*")
+# ---------------------------------------------------------------------------
+# Generalisation tab
+# ---------------------------------------------------------------------------
+
+def _generalization_table_html() -> str:
+    gen = load_generalization()
+    episodes = gen.get("episodes", []) if isinstance(gen, dict) else []
+    if not episodes:
+        return evidence_unavailable("generalization.json (no episodes)")
+    rows: List[List[Any]] = []
+    for ep in episodes:
+        cfg = (ep.get("config") or "").replace("\\", "/").rsplit("/", 1)[-1].replace(".json", "")
+        scores = ep.get("grader_scores", {}) or {}
+        rows.append([
+            cfg,
+            ep.get("seed"),
+            ep.get("steps"),
+            f"{ep.get('final_bank', 0):.2f}",
+            f"{(ep.get('format_compliance') or 0.0):.2f}",
+            f"{scores.get('profit_task', 0):.2f}",
+            f"{scores.get('inventory_task', 0):.2f}",
+            f"{scores.get('competitor_response_task', 0):.2f}",
+            f"{scores.get('crisis_recovery_task', 0):.2f}",
+        ])
+    return table(
+        ["Config", "Seed", "Steps", "Final bank", "Format", "Profit", "Inventory", "Competitor", "Crisis"],
+        rows,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Compose
+# ---------------------------------------------------------------------------
+
+def build_demo() -> gr.Blocks:
+    with gr.Blocks(title="Siyaani Commerce - AI CEO", analytics_enabled=False) as demo:
+        gr.HTML(f"<style>{THEME_CSS}</style>")
+        header_html = gr.HTML()
+        diag_html = gr.HTML()
+
+        with gr.Tabs():
+            with gr.TabItem("Story"):
+                gr.HTML(render_story_html())
+
+            with gr.TabItem("Live Run"):
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        policy_radio = gr.Radio(
+                            choices=list(ALL_POLICIES),
+                            value=POLICY_TRAINED,
+                            label="Policy",
+                        )
+                        seed_in = gr.Number(value=2026, label="Seed", precision=0)
+                        business_in = gr.Textbox(
+                            value="",
+                            label="business_id (optional)",
+                            placeholder="leave empty for default; e.g. medplus_pharmacy",
+                        )
+                        run_btn = gr.Button("Run single episode", variant="primary")
+                        ab_btn = gr.Button("Run A/B comparison (same seed, baseline_zero_shot vs trained)", variant="secondary")
+                    with gr.Column(scale=2):
+                        run_summary = gr.HTML(banner("Idle", "No run yet.", kind="neutral"))
+                        log_output = gr.Code(label="Step log", language="markdown", lines=20, elem_classes=["r2-log"])
+                        final_cards = gr.HTML("")
+                        grader_html = gr.HTML("")
+                        run_meta = gr.Code(label="Run metadata (run_id, endpoint counts, hashes)", language="json", lines=12)
+
+                run_btn.click(
+                    fn=_do_run_single,
+                    inputs=[policy_radio, seed_in, business_in],
+                    outputs=[run_summary, log_output, final_cards, grader_html, run_meta],
+                )
+
+                gr.HTML('<hr style="border:none;border-top:1px solid var(--border);margin:24px 0;" />')
+
+                ab_summary = gr.HTML(banner("A/B idle", "Click the A/B button to compare baseline vs trained on the same seed.", kind="neutral"))
+                ab_table = gr.HTML("")
+                ab_summary_json = gr.Code(label="A/B summary", language="json", lines=14)
+                ab_meta = gr.Code(label="A/B metadata", language="json", lines=8)
+
+                ab_btn.click(
+                    fn=_do_run_ab,
+                    inputs=[seed_in, business_in],
+                    outputs=[ab_summary, ab_table, ab_summary_json, ab_meta],
+                )
+
+            with gr.TabItem("Training Proof"):
+                gr.HTML('<h2 style="margin:0 0 12px 0;">Composite metrics: baseline vs trained</h2>')
+                gr.HTML(_proof_metric_table_html())
+                gr.HTML('<h3 style="margin:24px 0 12px 0;">Reward curve</h3>')
+                p = artifact_image_path("reward_curve.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("reward_curve.png"))
+                gr.HTML('<h3 style="margin:24px 0 12px 0;">Exploration / entropy decay</h3>')
+                p = artifact_image_path("exploration_curve.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("exploration_curve.png"))
+                gr.HTML('<h3 style="margin:24px 0 12px 0;">Action distribution shift</h3>')
+                p = artifact_image_path("policy_evolution.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("policy_evolution.png"))
+                gr.HTML('<h3 style="margin:24px 0 12px 0;">Composite score lift</h3>')
+                p = artifact_image_path("before_after_comparison.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("before_after_comparison.png"))
+                gr.HTML('<h3 style="margin:24px 0 12px 0;">Action success rates (per action_type)</h3>')
+                gr.HTML(_action_success_table_html())
+
+            with gr.TabItem("Generalisation"):
+                gen_check = generalization_covers_unseen_configs()
+                if not gen_check["ok"]:
+                    gr.HTML(banner(
+                        "Unseen-config evidence missing",
+                        f"Need rows for: <code>{', '.join(gen_check['missing'])}</code>. "
+                        "Re-run scripts/run_full_pipeline.py with --generalize-configs medplus_pharmacy stackbase_saas.",
+                        kind="warn",
+                    ))
+                else:
+                    gr.HTML(banner(
+                        "Unseen-config evidence present",
+                        f"Configs covered: <code>{', '.join(gen_check['covered'])}</code>.",
+                        kind="good",
+                    ))
+                gr.HTML('<h3 style="margin:18px 0 12px 0;">Per-episode performance across configs</h3>')
+                gr.HTML(_generalization_table_html())
+                gr.HTML('<h3 style="margin:18px 0 12px 0;">Generalisation chart</h3>')
+                p = artifact_image_path("generalization.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("generalization.png"))
+                gr.HTML('<h3 style="margin:18px 0 12px 0;">Failure vs recovery (same seed, two policies)</h3>')
+                p = artifact_image_path("failure_vs_recovery.png")
+                if p:
+                    gr.Image(value=p, show_label=False)
+                else:
+                    gr.HTML(evidence_unavailable("failure_vs_recovery.png"))
+
+        gr.HTML(
+            '<div class="r2-footer">'
+            'Trained with <strong>GRPO</strong> on <strong>Qwen2.5-1.5B-Instruct</strong>. '
+            'Backend follows the <strong>OpenEnv</strong> contract. '
+            'Built for the Round-2 hackathon judging panel - all numbers above come from real endpoint calls or files in <code>artifacts/</code>.'
+            '</div>'
+        )
+
+        # Compute header + diagnostics on each page load so the banner reflects the
+        # LIVE runtime state of the backend, not the pre-bind state at module import.
+        demo.load(fn=lambda: (_header_html(), _startup_diagnostics_html()),
+                  inputs=None, outputs=[header_html, diag_html])
+    return demo
+
+
+demo = build_demo()
+
 
 if __name__ == "__main__":
-    demo.queue().launch(server_name="0.0.0.0", server_port=7860, share=False)
+    demo.queue().launch(
+        server_name="0.0.0.0",
+        server_port=int(os.getenv("PORT", "7860")),
+        share=False,
+        show_error=True,
+    )
