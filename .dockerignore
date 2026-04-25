@@ -8,3 +8,32 @@ __pycache__/
 .env
 .git
 .gitignore
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+node_modules/
+*.log
+.commit_msg.tmp
+
+# Jupyter / notebook state
+.ipynb_checkpoints/
+swiftlogic_grpo_training.ipynb
+
+# Training + evaluation artifacts (regenerated on Colab / run_full_pipeline)
+artifacts/
+artifacts/**
+
+# Developer transcripts & local caches
+agent-transcripts/
+terminals/
+uploads/
+.cursor/
+
+# Tests & docs (keep image small; env still verifies at build time)
+tests/
+
+# Misc
+*.tar
+*.zip
+*.gz

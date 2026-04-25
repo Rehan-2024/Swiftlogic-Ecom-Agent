@@ -5,3 +5,4 @@ requests
 uvicorn
 fastapi
 numpy>=1.24
+matplotlib>=3.7

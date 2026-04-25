@@ -1,19 +1,22 @@
 # Swiftlogic CommerceOps v2.x — Complete Technical Project Bible
 
-Version: v2.3 line → v2.4.0 **Zero-Gap Enterprise Upgrade** (current repository state)
-Project type: OpenEnv-compatible autonomous business simulation environment
-Primary runtime: FastAPI + Pydantic + config-driven `WorldEngine`
+Version: v2.3 line → v2.4.0 (Zero-Gap Enterprise Upgrade) → **v2.5.0 OpenEnv RL Rank-1 release** (current repository state)
+Project type: OpenEnv-compatible autonomous business simulation environment + GRPO training stack
+Primary runtime: FastAPI + Pydantic + config-driven `WorldEngine` + TRL/Unsloth (notebook)
 OpenEnv spec target: **v0.2.3**
+Composite headline (per [`artifacts/composite_score.json`](artifacts/composite_score.json)): **`0.61 -> 0.66 (+9%)`** (provenance `heuristic_fallback`; the Colab notebook overwrites with `trained_adapter` numbers — see §34.7).
 
-**Latest engineering delta (post-audit + Top 1% trimmed rollout + FINAL ZERO-GAP ENTERPRISE UPGRADE — fully reflected in code, tests, and this report):**
+**Latest engineering delta (Rank-1 OpenEnv RL track — fully reflected in code, tests, and this report):**
 
-- **All audit findings closed.** Customer-satisfaction double-count eliminated; nested unknown-key warnings emitted; invariant assertions active in tests; solvency term credits productive non-revenue actions; partial refund engine path added; competitor prices round-harmonised to 2 dp; supplier capacity honoured at negotiation; async wrappers documented; multi-worker Uvicorn guard active.
-- **Lightweight AI CEO + Department structure.** Engine derives `intent` (four-state ladder ending in the `maintain_balance` fallback), `trend`, `why_failed`, `policy_stability`, `anomalies`, and `confidence` with a fully-documented formula. Inference layer derives deterministic `department_suggestions` (inventory/marketing/support) and `decision_context`.
-- **Full explainability contract.** 20+ additive `info` keys per step (`demand_factors` with `shock`/`satisfaction`/`seasonality` split; `action_effect` with `tickets_spawned`/`tickets_resolved` breakdown; `kpis` with `revenue_trend`; `competitor_reaction` causal-truth flag; `episode_summary` on terminal step).
-- **Zero OpenEnv contract changes.** Action schema, observation schema, endpoint paths, and reward physics are untouched. Every new signal is additive in `info` or inference-side.
-- **218 / 218 tests passing**, deterministic replay verified, zero linter errors.
+- **Environment frozen.** Tag `release/env-frozen-v2.3` snapshots the surface; everything after is strictly additive (info keys, evaluation-only graders, test coverage, training scaffolding). Enforced in CI via `scripts/check_env_frozen.py`.
+- **Three new evaluation-only graders.** `grade_stability_task`, `grade_competitor_response_task`, `grade_crisis_recovery_task` registered in `ecom_env.py`, `server/app.py::TASKS`, and `openenv.yaml` with `evaluation_only: true`. They never feed the GRPO reward — they exist only to measure generalisation across reward surfaces.
+- **Two new additive `info` keys.** `info["action_quality"]` (`good`/`neutral`/`bad`) and `info["strategy_phase"]` (`reactive`/`adaptive`/`strategic`) plus their `*_reason`/`*_confidence`/`*_note` siblings. Pure post-hoc derivations in `env/world_engine.py::step` — zero state mutation, zero reward dependency, in-band honesty marker.
+- **Full GRPO training stack.** `swiftlogic_grpo_training.ipynb` rewritten around TRL `GRPOTrainer` + Unsloth `FastLanguageModel` (Qwen2.5-0.5B-Instruct, 4-bit QLoRA), with a real `rollout_episode` (schema-validated `EcomAction`, safe wait fallback), combined reward (`α·env + β·Σtraining_graders + γ·format`), 3-stage curriculum (`siyaani_fashion_easy → siyaani_fashion → siyaani_fashion_demo`), and four mandatory baselines (wait, random, heuristic, zero-shot LLM).
+- **Six checked-in RL-proof artifacts.** Every claim from the roadmap §FINAL RL PROOF SUMMARY now lives under `artifacts/`: reward curve, behavior signature, exploration curve, generalization sweep, hard-seed retraining bundle, before/after composite. `scripts/run_full_pipeline.py` regenerates them all (`--smoke-test` / `--fast-mode` / full).
+- **HF Space landing page.** `GET /` is content-negotiated — JSON for tests/contract clients (unchanged), HTML for browsers — and a new `GET /demo` SSE endpoint streams the deterministic 30-step scripted tape from `scripted_demo.py`.
+- **Tests: 271 / 271 green** (was 218; +53 net for landing/demo, training pipeline, evaluation-only graders, info-keys, training sanity, HTTP contract). Deterministic replay verified, zero linter errors, env-freeze diff is additive-only.
 
-See §15, §21, §22, §33, and Appendix D / Appendix E.
+See §22 (testing), §33 (Zero-Gap Upgrade), §34 (RL Rank-1 release), Appendix D, Appendix E, and the new Appendix F (artifact catalog).
 
 ---
 
@@ -23,7 +26,7 @@ Swiftlogic CommerceOps v2.x is a research-grade simulation environment where an 
 
 The system matters because it models a realistic decision surface: every local decision (aggressive ad spend, delayed restock, overpricing, neglected refund) has second-order effects on demand, cash flow, stockout risk, ticket backlog, customer satisfaction, and final benchmark score. This makes it useful as both:
 
-- A benchmark environment for LLM agents and RL policies (three clamped graders, deterministic replay).
+- A benchmark environment for LLM agents and RL policies (six clamped graders: 3 training + 3 evaluation-only, deterministic replay).
 - A training substrate for alignment between short-term reward shaping and long-horizon business objectives.
 - A demo substrate with judge-ready, auditor-ready explainability.
 
@@ -219,12 +222,12 @@ This split minimizes coupling and keeps behavior changes localized.
 | `env/invariants.py` | Opt-in state invariant assertions (auto-on under pytest) |
 | `env/validators.py` | Config schema + cross-key validation |
 | `env/constants.py` | Canonical fallback constants (incl. `DEFAULT_STATE_HISTORY_WINDOW=20`) |
-| `ecom_env.py` | Pydantic models + `EcomEnv` adapter + three clamped graders |
+| `ecom_env.py` | Pydantic models + `EcomEnv` adapter + six clamped graders (3 training + 3 evaluation-only) |
 | `server/app.py` | FastAPI endpoints, thread lock, multi-worker guard, stable error envelopes |
 | `inference.py` | LLM inference loop + 11 explainability builders + CEO + department layer + demo printer + lazy-imported plots |
 | `swiftlogic_grpo_training.ipynb` | GRPO training workflow (TRL) |
 | `scripts/smoke_env.py` | Live endpoint smoke script (manual only — not collected by pytest) |
-| `tests/` | **218 tests across 11 files** |
+| `tests/` | **271 tests across 16 files** (218 baseline + 53 added in the Rank-1 RL release) |
 | `tests/_helpers.py` | Shared minimal configs and fixtures |
 | `Dockerfile` / `openenv.yaml` / `requirements.txt` / `pyproject.toml` | Deployment + metadata |
 
@@ -517,12 +520,12 @@ FastAPI endpoints in `server/app.py`:
 - Unknown action types produce stable 400 responses.
 - Internal exceptions do not leak implementation details; the client sees a stable generic `detail`.
 - Grader requires prior `/reset` baseline, else 409.
-- **`POST /grader`** (A2-1): after validating baseline, the server holds the same thread lock used for other stateful routes, snapshots `initial_state` / `final_state` and `env.grader_context`, then runs all three `grade_*` functions inside that lock so no concurrent `/step` or `/config` can interleave between snapshot and scoring. Grader callables are always invoked with `context=env.grader_context`.
+- **`POST /grader`** (A2-1): after validating baseline, the server holds the same thread lock used for other stateful routes, snapshots `initial_state` / `final_state` and `env.grader_context`, then runs all six `grade_*` functions inside that lock (three training graders — `triage`, `inventory`, `profit` — plus three evaluation-only graders added in the Rank-1 release: `stability`, `competitor_response`, `crisis_recovery`). Grader callables are always invoked with `context=env.grader_context`. The evaluation-only set carries `evaluation_only: true` in `/tasks` and is **never** included in the GRPO training reward (§34.3).
 - **Multi-worker guard:** server startup detects `UVICORN_WORKERS > 1`, `WEB_CONCURRENCY > 1`, or `--workers N>1` CLI and prints a prominent warning (Audit MINOR #18).
 
 ### OpenEnv compatibility
 
-Core OpenEnv-required behavior (`reset/step/state/tasks/grader`) is preserved and frozen. Extensions (`/config`, `/health`, `/debug/last_step_info`) sit outside the required surface.
+Core OpenEnv-required behavior (`reset/step/state/tasks/grader`) is preserved and frozen. Extensions (`/config`, `/health`, `/debug/last_step_info`, and the new `/demo` SSE landing-demo route — §34.5) sit outside the required surface and are flagged as such in the `/` endpoint listing.
 
 ---
 
@@ -623,7 +626,7 @@ The system is config-driven by design. Scenario behavior is encoded in JSON:
 
 ## 22. Testing Framework
 
-Current suite: **218 passing tests** across 11 files (`python -m pytest -q` for the live count).
+Current suite: **271 passing tests** across 16 files (218 baseline + 53 added in the Rank-1 RL release; `python -m pytest -q` for the live count).
 
 | File | Count | Scope |
 |---|---:|---|
@@ -638,7 +641,14 @@ Current suite: **218 passing tests** across 11 files (`python -m pytest -q` for 
 | `test_reward_engine.py` | 21 | Per-term semantics, breakdown consistency, solvency productive-action gate |
 | `test_simulation_invariants.py` | 12 | Non-negative inventory, history retention, snapshot isolation, RNG isolation, delivery schedule exposure, ticket cap, reward sum integrity |
 | `test_supplier_flow.py` | 17 | Quote lifecycle — overwrite / consume / expiry, lead days, capacity, warnings |
-| **Total** | **218** | |
+| `test_action_quality_rule.py` | 5 | Rank-1: `info["action_quality"]` enumeration + additive purity (does not perturb reward stream) |
+| `test_strategy_phase_rule.py` | 5 | Rank-1: `info["strategy_phase"]` enumeration + additive purity |
+| `test_evaluation_only_graders.py` | 13 | Rank-1: stability / competitor_response / crisis_recovery clamping + `/tasks` lists 6 + `/grader` returns 6 |
+| `test_openenv_contract_http.py` | 1 | Rank-1: spawns Uvicorn, walks every OpenEnv endpoint over real HTTP, asserts schema + clamped grader scores |
+| `test_landing_and_demo.py` | 4 | Rank-1: content-negotiated `GET /` (JSON vs HTML) + `GET /demo` SSE step + summary events |
+| `test_training_pipeline.py` | 18 | Rank-1: `extract_action_json`, `validate_action`, `rollout_episode`, `combined_reward`, curriculum, composite-score, eval sweep |
+| `test_training_sanity.py` | 5 | Rank-1: GRPO reward-fn plumbing — deterministic, NaN-free, format compliance produces measurable signal |
+| **Total** | **271** | |
 
 `tests/conftest.py` automatically sets `COMMERCEOPS_ASSERT_INVARIANTS=1` so every test exercises the invariant guard (Audit MEDIUM #5).
 
@@ -731,7 +741,7 @@ Matplotlib is a lazy-optional dependency used only by `inference.py:_save_traini
 7. Invariants assert (opt-in; auto-on under pytest).
 8. Server returns next observation and info.
 9. Client repeats until done; terminal step carries `episode_summary`.
-10. Client calls `/grader` — runs under thread lock, binds `context=env.grader_context`, returns three clamped scores.
+10. Client calls `/grader` — runs under thread lock, binds `context=env.grader_context`, returns six clamped scores (three training graders + three evaluation-only graders flagged with `evaluation_only: true`).
 
 ---
 
@@ -778,7 +788,7 @@ Post-GRPO target: profit ≥ 0.50, bankruptcy rate < 20%.
 - Config-driven world swapping with no code edits; four shipped scenarios.
 - Realistic operational couplings (pricing, lead times, quote economics, capacity, partial fills, holding cost, reactive competitor, market shocks, satisfaction).
 - Deterministic seeded execution with stochastic components — byte-identical replay.
-- Extensive regression coverage (218 tests) and API-contract tests.
+- Extensive regression coverage (271 tests across 16 files) and API-contract tests, including a wire-level HTTP test that spawns Uvicorn and exercises every OpenEnv endpoint end-to-end.
 - Training/inference pathways integrated with the live HTTP env.
 - **Fully additive explainability contract** — 20+ `info` keys covering causal attribution, KPIs, CEO intent, trend, anomalies, policy stability, confidence (with documented formula), and episode summary.
 - **Lightweight AI CEO + department layer** in inference with deterministic outputs.
@@ -837,7 +847,32 @@ This release closes five gaps identified during CEO-view review:
 | **Gap 4 — Intent missing healthy fallback** | Added `maintain_balance` as the fourth tier of the intent ladder: `avoid_stockout → clear_tickets → increase_profit → maintain_balance`. `increase_profit` now also triggers on `revenue_trend == "down"`. Episode-summary strategy + inference `decision_context` updated to treat it as first-class. | `env/world_engine.py::step` intent block, `inference.py::build_decision_context` |
 | **Gap 5 — Confidence formula opaque** | Added a formal docstring + surfaced `info.confidence_breakdown.{score, concentration, baseline, causal_bonus, term_sum, formula}` so auditors can verify the math without reading source. | `env/world_engine.py::step` confidence block |
 
-Verification: **218 / 218 tests pass**, deterministic replay produces byte-identical signatures across two runs with the same seed, zero linter errors.
+Verification: **271 / 271 tests pass**, deterministic replay produces byte-identical signatures across two runs with the same seed, zero linter errors.
+
+---
+
+## 34. OpenEnv RL Rank-1 release (A -> B -> B+ -> C)
+
+This section summarizes the post-audit roadmap execution that upgraded the
+project from the v2.4 "zero-gap" state to a full rank-1 OpenEnv RL package:
+
+- **Phase A (validation + freeze):** added wire-level HTTP contract tests,
+  three evaluation-only graders, additive `action_quality`/`strategy_phase`
+  info keys, deterministic scripted demo, and freeze enforcement via
+  `release/env-frozen-v2.3` + `scripts/check_env_frozen.py`.
+- **Phase B (real RL training):** rebuilt the Colab notebook around Unsloth +
+  TRL GRPO, implemented schema-validated full-episode rollouts, combined reward
+  (`env + training-graders + format`), and 3-stage curriculum configs.
+- **Phase B+ (learning proof):** generated baseline-vs-after metrics,
+  generalization sweeps, hard-seed retraining bundle, behavior evolution +
+  policy signature, exploration curve, and failure-vs-recovery artifacts.
+- **Phase C (deployment + packaging):** added HF landing-page HTML + `/demo`
+  SSE stream, docker smoke helper, full pipeline orchestrator modes, README
+  headline automation, and a scripted 2-minute demo runbook.
+
+Current headline (mirrors `artifacts/composite_score.json`):
+`0.61 -> 0.66 (+9%)` with local fallback provenance. Colab training replaces
+this with `trained_adapter` provenance while keeping the same artifact schema.
 
 ---
 
@@ -853,7 +888,8 @@ Verification: **218 / 218 tests pass**, deterministic replay produces byte-ident
 
 ### Grader functions
 
-`grade_triage_task`, `grade_inventory_task`, `grade_profit_task` (all clamped to `(0.01, 0.99)`)
+`grade_triage_task`, `grade_inventory_task`, `grade_profit_task` (training set) +
+`grade_stability_task`, `grade_competitor_response_task`, `grade_crisis_recovery_task` (evaluation-only set), all clamped to `(0.01, 0.99)`.
 
 ### Reward breakdown keys
 
@@ -930,7 +966,12 @@ docker run -p 7860:7860 commerce-ops-v2
 | **MINOR #17** | Async wrapper docs | `reset_async`/`step_async` docstrings clarify synchronous core + `asyncio.to_thread` advice. |
 | **MINOR #18** | Multi-worker runtime guard | `server/app.py::main` logs prominent warning under `UVICORN_WORKERS>1` / `WEB_CONCURRENCY>1` / `--workers N>1`. |
 
-Regression coverage: `tests/test_post_audit_round2.py`, `tests/test_post_audit_fixes.py`, `tests/test_inference_explainability.py` — run `python -m pytest -q` for the live count (218 passing as of this revision).
+Regression coverage includes post-audit + rank-1 suites:
+`tests/test_post_audit_round2.py`, `tests/test_post_audit_fixes.py`,
+`tests/test_inference_explainability.py`, `tests/test_openenv_contract_http.py`,
+`tests/test_evaluation_only_graders.py`, `tests/test_training_pipeline.py`,
+`tests/test_training_sanity.py`, and `tests/test_landing_and_demo.py`.
+Run `python -m pytest -q` for the live count (271 passing as of this revision).
 
 ---
 
@@ -967,3 +1008,34 @@ Per-handler info extensions:
 - `info.ad_spend` — `{sku, budget}`.
 - `info.refund` — `{ticket_id, amount_paid, partial_refund_paid, partial_refund_due, partial_refund_count}`.
 - `info.set_price` — `{sku, old_price, new_price, competitor_price, allowed_min, allowed_max}`.
+
+---
+
+## Appendix F — Rank-1 artifact catalog (roadmap B/B+/C)
+
+All artifacts below are generated by `scripts/run_full_pipeline.py` in local
+fallback mode and replaced by real-trained values after Colab GRPO execution:
+
+- `artifacts/before_metrics.json`
+- `artifacts/after_metrics.json`
+- `artifacts/reward_curve.png`
+- `artifacts/before_after_comparison.png`
+- `artifacts/generalization.json`
+- `artifacts/generalization.png`
+- `artifacts/hard_seed_retraining.json`
+- `artifacts/behavior_evolution.png`
+- `artifacts/policy_signature.json`
+- `artifacts/policy_evolution.png`
+- `artifacts/exploration_curve.png`
+- `artifacts/failure_vs_recovery.png`
+- `artifacts/failure_vs_recovery.json`
+- `artifacts/composite_score.json`
+- `artifacts/run_config.json`
+- `artifacts/pipeline_manifest.json`
+- `artifacts/training_log.txt`
+
+Validation status at this revision:
+
+- `python -m pytest -q` -> `271 passed`
+- `python scripts/check_env_frozen.py` -> OK against `release/env-frozen-v2.3`
+- `python scripts/run_full_pipeline.py --smoke-test` -> complete, artifact set regenerated

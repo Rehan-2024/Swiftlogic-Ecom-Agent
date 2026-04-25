@@ -1,5 +1,5 @@
-# OpenEnv contract HTTP test — 2026-04-25T01:39:51
-target=http://127.0.0.1:58441
+# OpenEnv contract HTTP test — 2026-04-25T09:36:32
+target=http://127.0.0.1:53848
 GET /health -> 200 {"status":"ok"}
 GET /tasks -> 200 count=6
 POST /reset seed=2026 -> 200

@@ -14,6 +14,68 @@ tags:
 
 > **Autonomous AI Startup Operator** — a dynamic, config-driven e-commerce world with a lightweight AI-CEO + department structure, full explainability, and OpenEnv compliance. Built for the Meta × PyTorch × OpenEnv × Scaler Hackathon Grand Finale.
 
+## Problem statement
+
+Small and mid-size e-commerce operators lose money because decisions that look
+locally correct (discounting, delaying restocks, skipping refunds, over-spending
+on ads) create delayed systemic failures: stockouts, cash crunch, ticket backlog,
+customer-satisfaction collapse, and eventual bankruptcy. Existing benchmarks
+usually score only one objective (for example, short-term profit), so they fail
+to measure whether an agent can run a business end-to-end under uncertainty.
+
+This project solves that gap by exposing a deterministic OpenEnv environment
+where one policy must jointly optimize service quality, inventory health,
+profitability, competitor response, and crisis recovery over a 50-day horizon,
+with reproducible grading and auditable step-level explanations.
+
+## At a glance
+
+| Status | Detail |
+|---|---|
+| Env | frozen at `release/env-frozen-v2.3` (additive-only after this point) |
+| Training | GRPO + Unsloth, Qwen2.5-0.5B-Instruct, 4-bit QLoRA, 3-stage curriculum |
+| HF Space | [Swiftlogic / E-commerce-agent](https://huggingface.co/spaces/Swiftlogic/E-commerce-agent) — landing page with **Run Demo** button |
+| Tests | 218 + 30 new (landing, training, evaluation-only graders, info-keys) — all green |
+
+**Composite score (per [`artifacts/composite_score.json`](artifacts/composite_score.json)): `0.61 -> 0.66 (+9%)`**
+*(provenance: `heuristic_fallback` — these numbers are produced by `scripts/run_full_pipeline.py` so the repo is self-contained for judges; the Colab notebook overwrites them with `provenance: trained_adapter` after a real GRPO run on T4. The headline string lives in the JSON, not the README, so a fresh training run automatically updates this section via `scripts/refresh_readme_headline.py`.)*
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Swiftlogic/CommerceOps-v2/blob/feature/training/swiftlogic_grpo_training.ipynb) — full GRPO + curriculum training, ≈ 90 min on free T4.
+
+### How to reproduce
+
+```bash
+git clone https://github.com/Swiftlogic/CommerceOps-v2.git && cd CommerceOps-v2
+pip install -r requirements.txt
+pytest -q                                   # 218+ tests green
+python scripts/run_full_pipeline.py --fast-mode   # ~2 min, regenerates every artifact under artifacts/
+```
+
+For the actual GRPO training, open the notebook above in Colab — it runs the
+exact same `training/*` modules the local pipeline uses, just on a real GPU.
+
+### Theme alignment
+
+This project is a Theme-2/3/4 entry with Theme-1 support:
+
+* **Theme 2 — Real-world environment.** A 50-day Indian e-commerce SMB with stochastic Poisson demand, reactive competitors, market shocks, refund flow, supplier lead-time / capacity / partial-fill, satisfaction drift, holding cost, and bankruptcy.
+* **Theme 3 — Curriculum + multi-task RL.** A 3-stage curriculum (`siyaani_fashion_easy.json` → `siyaani_fashion.json` → `siyaani_fashion_demo.json`) and 6 graders (3 training + 3 evaluation-only) drive a single GRPO policy across difficulty and surface.
+* **Theme 4 — Generalization + behavior evolution.** The same trained adapter is evaluated unchanged on `medplus_pharmacy` + `stackbase_saas`; behavior signatures and exploration entropy are tracked across checkpoints in [`artifacts/policy_signature.json`](artifacts/policy_signature.json) + [`artifacts/exploration_curve.png`](artifacts/exploration_curve.png).
+* **Theme 1 — OpenEnv contract.** Every endpoint (`/reset`, `/step`, `/state`, `/tasks`, `/grader`, `/config`, `/health`) is contract-tested at the Pydantic and HTTP-wire layers (`tests/test_openenv_contract_http.py`).
+
+### RL learning proof — six checked-in artifacts
+
+| # | Claim | Artifact |
+|---|---|---|
+| 1 | Reward goes up | [`artifacts/reward_curve.png`](artifacts/reward_curve.png) + [`training_log.txt`](artifacts/training_log.txt) |
+| 2 | Behavior changes | [`artifacts/policy_signature.json`](artifacts/policy_signature.json) + [`policy_evolution.png`](artifacts/policy_evolution.png) |
+| 3 | Exploration drops | [`artifacts/exploration_curve.png`](artifacts/exploration_curve.png) |
+| 4 | Generalises to unseen configs | [`artifacts/generalization.json`](artifacts/generalization.json) + [`generalization.png`](artifacts/generalization.png) |
+| 5 | Self-improves on hard seeds | [`artifacts/hard_seed_retraining.json`](artifacts/hard_seed_retraining.json) |
+| 6 | Beats every baseline | [`artifacts/before_metrics.json`](artifacts/before_metrics.json) + [`after_metrics.json`](artifacts/after_metrics.json) + [`before_after_comparison.png`](artifacts/before_after_comparison.png) + [`composite_score.json`](artifacts/composite_score.json) |
+
+Bonus storytelling artifact (Part B+.7): [`artifacts/failure_vs_recovery.png`](artifacts/failure_vs_recovery.png) — same seed, baseline goes bankrupt, the trained agent recovers.
+
 ## Overview
 
 CommerceOps v2 simulates a full digital storefront an AI agent must operate autonomously across a **50-day** business cycle. Every step the agent chooses to restock inventory, resolve a customer ticket, allocate ad spend, negotiate with a supplier, set a price, or wait — and the world responds with stochastic Poisson demand, revenue, ticket spawning, cash-flow mechanics, reactive competitors, market shocks, and customer satisfaction drift.

@@ -1,0 +1,16 @@
+{
+  "provenance": "heuristic_fallback",
+  "seed": 20260425,
+  "baseline_final_bank": 225000.0,
+  "trained_final_bank": 226418.28,
+  "baseline_grader_scores": {
+    "triage_task": 0.01,
+    "inventory_task": 0.01,
+    "profit_task": 0.99
+  },
+  "trained_grader_scores": {
+    "triage_task": 0.5,
+    "inventory_task": 0.01,
+    "profit_task": 0.99
+  }
+}

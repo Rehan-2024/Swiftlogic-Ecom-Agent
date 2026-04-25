@@ -44,7 +44,7 @@ from typing import Any, Dict, Optional, Type, get_args
 import uvicorn
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
 
 
@@ -439,8 +439,22 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/")
-    async def root():
+    async def root(request: Request):
         env = state["env"]
+        # C2 (Phase C) — content-negotiated landing page. JSON stays the
+        # default to preserve the existing OpenEnv contract; HTML is
+        # served only when the browser explicitly prefers it (or when
+        # ``?format=html`` is passed). Tests using TestClient send
+        # ``Accept: */*`` and continue to receive JSON.
+        wants_html = request.query_params.get("format") == "html"
+        if not wants_html:
+            accept = request.headers.get("accept", "")
+            if "text/html" in accept and "application/json" not in accept:
+                wants_html = True
+        if wants_html:
+            from server.landing import render_landing  # local import
+            return HTMLResponse(render_landing(state))
+
         if env is None:
             return {
                 "status": "degraded",
@@ -462,8 +476,41 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
                 "/grader",
                 "/config",
                 "/health",
+                "/demo",
             ],
         }
+
+    @app.get("/demo")
+    async def run_landing_demo(request: Request):
+        """Server-Sent Events stream that runs a deterministic scripted demo.
+
+        Used by the landing page "Run Demo" button (Phase C2). This
+        endpoint is read-write w.r.t. env state and is therefore
+        serialized behind the same lock as ``/step``. It does NOT alter
+        the OpenEnv contract — clients that don't care can ignore it.
+        """
+        unavailable = _require_env()
+        if unavailable is not None:
+            return unavailable
+        try:
+            steps = int(request.query_params.get("steps", "30"))
+        except (TypeError, ValueError):
+            steps = 30
+        try:
+            seed = int(request.query_params.get("seed", "20260425"))
+        except (TypeError, ValueError):
+            seed = 20260425
+        steps = max(1, min(steps, 50))
+
+        from server.landing import stream_scripted_demo  # local import
+
+        def _generator():
+            with state["lock"]:
+                obs = state["env"].reset(seed=seed)
+                state["initial_state"] = obs.model_copy(deep=True)
+                yield from stream_scripted_demo(state["env"], seed=seed, steps=steps)
+
+        return StreamingResponse(_generator(), media_type="text/event-stream")
 
     @app.post("/reset")
     async def reset_env(request: Request):
