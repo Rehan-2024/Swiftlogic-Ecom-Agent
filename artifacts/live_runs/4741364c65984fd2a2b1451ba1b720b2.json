@@ -1,0 +1,270 @@
+{
+  "run_id": "4741364c65984fd2a2b1451ba1b720b2",
+  "started_at": "2026-04-26T02:38:17.556174+00:00",
+  "ended_at": "2026-04-26T02:38:44.377878+00:00",
+  "seed": 20260425,
+  "policy_type": "baseline_zero_shot",
+  "business_id": "siyaani_fashion",
+  "endpoint_base_url": "http://localhost:7860",
+  "endpoint_call_counts": {
+    "reset": 1,
+    "step": 10,
+    "state": 0,
+    "grader": 1,
+    "tasks": 0,
+    "config": 1,
+    "health": 0
+  },
+  "fallback_count": 10,
+  "git_sha": "091c6f1e423689ed1bead2f90e7e817940f5ea8b",
+  "adapter_sha": null,
+  "starting_bank": 50000.0,
+  "final_bank": 225000.0,
+  "total_reward": -2.211076,
+  "n_steps": 10,
+  "bankrupt": false,
+  "done_reason": "max_steps_reached",
+  "grader_scores": {
+    "triage_task": 0.01,
+    "inventory_task": 0.01,
+    "profit_task": 0.99,
+    "stability_task": 0.99,
+    "competitor_response_task": 0.7223,
+    "crisis_recovery_task": 0.99
+  },
+  "action_summary": {
+    "by_action": {
+      "wait": {
+        "attempts": 10,
+        "successes": 10,
+        "success_rate": 1.0
+      }
+    },
+    "distribution": {
+      "wait": 1.0
+    },
+    "entropy": 0.0
+  },
+  "steps": [
+    {
+      "step": 1,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": 0.03001,
+      "bank_balance": 72100.0,
+      "inventory_summary": {
+        "silk_kurta": 44,
+        "cotton_set": 28,
+        "linen_dupatta": 17,
+        "silk_saree": 8
+      },
+      "intent": "maintain_balance",
+      "action_quality": "neutral",
+      "confidence": 1.0,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 1
+    },
+    {
+      "step": 2,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": 0.030451,
+      "bank_balance": 97700.0,
+      "inventory_summary": {
+        "silk_kurta": 38,
+        "cotton_set": 24,
+        "linen_dupatta": 13,
+        "silk_saree": 6
+      },
+      "intent": "maintain_balance",
+      "action_quality": "neutral",
+      "confidence": 1.0,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 2
+    },
+    {
+      "step": 3,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.069134,
+      "bank_balance": 127100.0,
+      "inventory_summary": {
+        "silk_kurta": 35,
+        "cotton_set": 14,
+        "linen_dupatta": 13,
+        "silk_saree": 1
+      },
+      "intent": "clear_tickets",
+      "action_quality": "neutral",
+      "confidence": 0.8585,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 3
+    },
+    {
+      "step": 4,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.269468,
+      "bank_balance": 153400.0,
+      "inventory_summary": {
+        "silk_kurta": 29,
+        "cotton_set": 7,
+        "linen_dupatta": 9,
+        "silk_saree": 0
+      },
+      "intent": "clear_tickets",
+      "action_quality": "neutral",
+      "confidence": 0.7631,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 4
+    },
+    {
+      "step": 5,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.270922,
+      "bank_balance": 169600.0,
+      "inventory_summary": {
+        "silk_kurta": 25,
+        "cotton_set": 0,
+        "linen_dupatta": 8,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.7647,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 5
+    },
+    {
+      "step": 6,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.16991,
+      "bank_balance": 192300.0,
+      "inventory_summary": {
+        "silk_kurta": 16,
+        "cotton_set": 0,
+        "linen_dupatta": 3,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.9215,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 6
+    },
+    {
+      "step": 7,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.17357,
+      "bank_balance": 199000.0,
+      "inventory_summary": {
+        "silk_kurta": 13,
+        "cotton_set": 0,
+        "linen_dupatta": 2,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.93,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 7
+    },
+    {
+      "step": 8,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.27228,
+      "bank_balance": 209300.0,
+      "inventory_summary": {
+        "silk_kurta": 8,
+        "cotton_set": 0,
+        "linen_dupatta": 1,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.9492,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 8
+    },
+    {
+      "step": 9,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.47357,
+      "bank_balance": 216000.0,
+      "inventory_summary": {
+        "silk_kurta": 5,
+        "cotton_set": 0,
+        "linen_dupatta": 0,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.7419,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 9
+    },
+    {
+      "step": 10,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.572685,
+      "bank_balance": 225000.0,
+      "inventory_summary": {
+        "silk_kurta": 0,
+        "cotton_set": 0,
+        "linen_dupatta": 0,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.7826,
+      "info_error": null,
+      "success": true,
+      "fallback": "load failed: OSError: The paging file is too small for this operation to complete. (os error 1455)",
+      "done": false,
+      "endpoint_call_id": 10
+    }
+  ]
+}
