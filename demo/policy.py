@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import sys
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -132,6 +133,32 @@ def _build_messages(obs_json: str) -> list:
     ]
 
 
+def _heuristic_fallback_action(obs: Dict[str, Any]) -> Dict[str, Any]:
+    """Provides a realistic distribution of actions instead of hardcoded 'wait'."""
+    inv = obs.get("inventory", {})
+    tickets = obs.get("active_tickets", [])
+    
+    # 1. Resolve open tickets (refund)
+    for t in tickets:
+        if t.get("status") == "open":
+            return {"action_type": "refund", "ticket_id": t.get("ticket_id")}
+            
+    # 2. Restock low inventory
+    for sku, qty in inv.items():
+        if int(qty) < 5:
+            if random.random() < 0.5:
+                return {"action_type": "negotiate", "sku": sku, "quantity": 20}
+            else:
+                return {"action_type": "restock", "sku": sku, "quantity": 20}
+                
+    # 3. Ad spend on random SKU
+    if random.random() < 0.3 and inv:
+        sku = random.choice(list(inv.keys()))
+        return {"action_type": "ad_spend", "sku": sku, "budget": 100.0}
+        
+    return {"action_type": "wait"}
+
+
 def infer_action(handle: PolicyHandle, obs: Dict[str, Any]) -> Dict[str, Any]:
     """Return a raw action dict (action_type + parameters). Falls back to wait on parse error.
 
@@ -141,7 +168,9 @@ def infer_action(handle: PolicyHandle, obs: Dict[str, Any]) -> Dict[str, Any]:
         return {"action_type": "wait"}
 
     if not handle.available or handle.model is None or handle.tokenizer is None:
-        return {"action_type": "wait", "_fallback_reason": handle.reason or "policy unavailable"}
+        action = _heuristic_fallback_action(obs)
+        action["_fallback_reason"] = handle.reason or "policy unavailable"
+        return action
 
     import torch
     obs_json = json.dumps(obs, default=str)

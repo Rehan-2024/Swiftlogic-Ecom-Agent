@@ -33,7 +33,7 @@ if str(ROOT) not in sys.path:
 
 from demo.backend_client import BackendClient, BackendError  # noqa: E402
 from demo.components import banner, patience_box  # noqa: E402
-from demo.live_theater import DEMO_MAX_STEPS, stream_live_episode, stream_policy_transition  # noqa: E402
+from demo.live_theater import build_pipeline_html, DEMO_MAX_STEPS, stream_live_episode, stream_policy_transition  # noqa: E402
 from demo.policy import (  # noqa: E402
     ALL_POLICIES,
     POLICY_TRAINED,
@@ -368,13 +368,27 @@ def build_demo() -> gr.Blocks:
                         refresh_store_btn = gr.Button("Refresh retail snapshot", variant="secondary")
 
                     with gr.Column(scale=2):
+                        with gr.Accordion("View System Architecture & Process Flow", open=False):
+                            gr.Markdown("""
+```mermaid
+graph LR
+    A[Environment Observation] -->|State: Inventory, Tickets| B(CEO Agent)
+    B -->|Reasoning Engine| C{Decision Module}
+    C -->|Wait| D[No Action]
+    C -->|Restock / Negotiate| E[Supplier API]
+    C -->|Refund| F[Support Queue]
+    C -->|Ad Spend| G[Marketing Engine]
+    D & E & F & G --> H[OpenEnv Backend]
+    H -->|Reward & Next State| A
+```
+""")
                         with gr.Group(elem_classes=["r2-theater"]):
                             head_html = gr.HTML(
                                 '<div class="r2-theater-head"><div>'
                                 '<h3 class="episode-title r2-fade-in-text">Ready</h3>'
                                 '<div class="episode-meta r2-fade-in-text">Pick execution mode, policy, seed, and shift length, then <strong>Launch</strong> or <strong>Run baseline vs trained</strong>.'
                                 "</div></div></div>"
-                                '<div class="r2-progress"><div style="width:0%"></div></div>'
+                                f"{build_pipeline_html(0.0)}"
                             )
                             step_card = gr.HTML(
                                 '<div class="r2-banner is-warn r2-fade-in-text"><h3>Nothing running yet</h3>'

@@ -995,3 +995,66 @@ html, body, #root {
   line-height: 1.6;
   margin: 0;
 }
+
+/* Interactive Pipeline Flow (replaces r2-progress) */
+.pipeline-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  margin: 8px 0 18px 0;
+}
+.pipeline-flow .p-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity 300ms ease, transform 300ms ease;
+  position: relative;
+}
+.pipeline-flow .p-node.active {
+  opacity: 1;
+  transform: scale(1.15);
+}
+.pipeline-flow .p-node .icon {
+  font-size: 20px;
+  margin-bottom: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.pipeline-flow .p-node.active .icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pipeline-flow .p-node .label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+.pipeline-flow .p-edge {
+  flex-grow: 1;
+  height: 3px;
+  background: var(--border-strong);
+  margin: 0 16px;
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pipeline-flow .p-edge .p-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 300ms ease;
+}

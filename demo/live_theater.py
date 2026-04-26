@@ -221,6 +221,32 @@ def _step_card_html(step_idx: int, total: int, obs: Dict[str, Any], action: Dict
     )
 
 
+def build_pipeline_html(pct: float) -> str:
+    return f"""
+<div class="pipeline-flow">
+  <div class="p-node {'active' if pct >= 0 else ''}">
+    <div class="icon">🚀</div>
+    <div class="label">Start</div>
+  </div>
+  <div class="p-edge"><div class="p-fill" style="width: {min(100, max(0, pct / 33.3 * 100))}%"></div></div>
+  <div class="p-node {'active' if pct >= 33.3 else ''}">
+    <div class="icon">⚙️</div>
+    <div class="label">Mid-shift</div>
+  </div>
+  <div class="p-edge"><div class="p-fill" style="width: {min(100, max(0, (pct - 33.3) / 33.3 * 100))}%"></div></div>
+  <div class="p-node {'active' if pct >= 66.6 else ''}">
+    <div class="icon">📈</div>
+    <div class="label">Late-shift</div>
+  </div>
+  <div class="p-edge"><div class="p-fill" style="width: {min(100, max(0, (pct - 66.6) / 33.3 * 100))}%"></div></div>
+  <div class="p-node {'active' if pct >= 99.9 else ''}">
+    <div class="icon">🏁</div>
+    <div class="label">Complete</div>
+  </div>
+</div>
+"""
+
+
 def _theater_head_html(policy: str, seed: int, business_id: str, base_url: str, current: int, total: int, status: str) -> str:
     pct = max(0.0, min(100.0, (current / max(total, 1)) * 100.0))
     return (
@@ -232,7 +258,7 @@ def _theater_head_html(policy: str, seed: int, business_id: str, base_url: str, 
         f'step {current} / {total} &middot; <strong>{html.escape(status)}</strong></div>'
         '</div>'
         '</div>'
-        f'<div class="r2-progress"><div style="width:{pct:.1f}%"></div></div>'
+        f'{build_pipeline_html(pct)}'
     )
 
 

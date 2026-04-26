@@ -821,7 +821,7 @@ def training_artifact_paths() -> Dict[str, Optional[str]]:
         path = artifact_image_path(filename)
         if not path:
             return None
-        return f"/static/demo/artifacts/{filename}"
+        return path
 
     return {
         "reward_curve": _artifact_url("reward_curve.png"),
@@ -855,7 +855,7 @@ def generalization_artifact_paths() -> Dict[str, Optional[str]]:
         path = artifact_image_path(filename)
         if not path:
             return None
-        return f"/static/demo/artifacts/{filename}"
+        return path
 
     return {
         "generalization": _artifact_url("generalization.png"),
