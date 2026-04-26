@@ -203,12 +203,12 @@ def render_hero() -> str:
 def render_jump_nav() -> str:
     items = [
         ("#story", "The story"),
-        ("#theater", "Live demo"),
-        ("#proof", "Training proof"),
-        ("#generalization", "Generalisation"),
+        ("#autonomous", "Pipeline schematic"),
+        ("#theater", "Live demo & Command Center"),
+        ("#proof-tabs", "Training & Generalisation"),
         ("#tech", "How it works"),
     ]
-    links = "".join(f'<a href="{href}">{html.escape(label)}</a>' for href, label in items)
+    links = "".join(f'<a href="{href}" onclick="document.getElementById(\'{href[1:]}\').scrollIntoView({{behavior: \'smooth\', block: \'start\'}}); return false;">{html.escape(label)}</a>' for href, label in items)
     return (
         '<nav class="r2-jump-nav">'
         '<span class="label">jump to</span>'
