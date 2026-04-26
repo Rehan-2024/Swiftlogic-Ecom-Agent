@@ -40,6 +40,8 @@
   color: var(--ink) !important;
   max-width: none !important;
   width: 100% !important;
+  /* Prevent OS / Gradio dark-chrome from forcing near-white text on our cream page */
+  color-scheme: only light;
 }
 
 h1, h2, h3, h4 {
@@ -602,6 +604,24 @@ html, body, #root {
   font-size: 13.5px;
   color: var(--ink);
   font-style: italic;
+}
+
+/* Accessibility: story blocks must stay dark-on-light on all displays.
+   Some laptops run Gradio/HF with dark form chrome; inherited `color` can
+   become off-white and disappear on our cream `var(--bg)` (TN panels worst). */
+#story .r2-chapter h3,
+#story .r2-chapter .r2-chapter-body,
+#story .r2-chapter .r2-chapter-body strong,
+#story .r2-chapter .r2-chapter-body code {
+  color: #1e293b !important; /* slate-800 */
+}
+#story .r2-chapter .r2-chapter-body p,
+#story .r2-chapter .r2-chapter-body li {
+  color: #334155 !important; /* slate-700 — was var(--ink-soft); forced for contrast */
+}
+#story .r2-chapter .r2-chapter-callout,
+#story .r2-chapter .r2-chapter-callout * {
+  color: #1e293b !important;
 }
 .r2-chapter-stat {
   margin-top: 16px;
