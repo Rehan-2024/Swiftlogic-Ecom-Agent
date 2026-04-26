@@ -875,6 +875,9 @@ def render_authenticity_strip() -> str:
     prov_label = readiness.provenance.value.replace("_", " ").title()
     adapter_label = readiness.adapter_status.replace("_", " ").title()
 
+    cov_str = cov_badges if cov_badges else '<em style="color:#6b7280;font-size:11px;">none verified</em>'
+    miss_str = f'<div style="margin-top:4px;font-size:10px;color:#923a3a;">Missing: {miss_badges}</div>' if miss_badges else ""
+
     return (
         '<section class="r2-section" id="authenticity">'
         '<p class="r2-section-eyebrow">Provenance tracker</p>'
@@ -892,8 +895,8 @@ def render_authenticity_strip() -> str:
         '<div class="r2-card" style="flex:1;min-width:200px;text-align:center;">'
         '<div style="font-size:28px;margin-bottom:4px;">🗺️</div>'
         '<div style="font-size:12px;font-weight:700;color:#2c3e50;">Config Coverage</div>'
-        f'<div style="margin-top:6px;">{cov_badges if cov_badges else "<em style=\\"color:#6b7280;font-size:11px;\\">none verified</em>"}</div>'
-        f'{"<div style=\\"margin-top:4px;font-size:10px;color:#923a3a;\\">Missing: " + miss_badges + "</div>" if miss_badges else ""}'
+        f'<div style="margin-top:6px;">{cov_str}</div>'
+        f'{miss_str}'
         '</div>'
         '</div>'
         # --- Freshness radar ---
