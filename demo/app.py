@@ -395,6 +395,11 @@ def build_demo() -> gr.Blocks:
                                 store_html = gr.HTML()
                             scorecard_html = gr.HTML("")
 
+                gr.HTML('<h3 class="r2-fade-in-text" style="margin-top: 32px; margin-bottom: 16px; border-top: 1px solid #e7e5e4; padding-top: 16px;">Live Training Evidence</h3>')
+                with gr.Row():
+                    theater_reward_img = gr.Image(label="Reward Curve", interactive=False, type="filepath")
+                    theater_explore_img = gr.Image(label="Learning/Exploration Curve", interactive=False, type="filepath")
+
 
 
             with gr.Tab("Learning Ledger"):
@@ -469,6 +474,8 @@ def build_demo() -> gr.Blocks:
                 render_techstack_section(),
                 training_artifact_paths().get("reward_curve"),
                 training_artifact_paths().get("exploration_curve"),
+                training_artifact_paths().get("reward_curve"),
+                training_artifact_paths().get("exploration_curve"),
                 training_artifact_paths().get("policy_evolution"),
                 training_artifact_paths().get("before_after"),
                 training_metrics_table(normalized=True),
@@ -488,6 +495,8 @@ def build_demo() -> gr.Blocks:
                 autonomous_html,
                 authenticity_html,
                 tech_html,
+                theater_reward_img,
+                theater_explore_img,
                 reward_img,
                 explore_img,
                 evolution_img,
