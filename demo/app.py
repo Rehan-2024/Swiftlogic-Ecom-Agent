@@ -443,12 +443,12 @@ def build_demo() -> gr.Blocks:
         rerun_event = rerun_btn.click(
             fn=_dispatch_live_run,
             inputs=[run_mode, policy_radio, seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
         )
         compare_event = compare_btn.click(
             fn=stream_policy_transition,
             inputs=[seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
         )
         stop_btn.click(
             fn=None,
