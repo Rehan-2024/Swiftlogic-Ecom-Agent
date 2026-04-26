@@ -77,6 +77,49 @@ The agent learned to stabilize the business. It stopped reactive over-ordering, 
 
 The environment includes a built-in **CEO Layer** that generates step-by-step causal explanations (e.g., "The agent chose to wait because it wanted to maintain balance, despite a slight revenue downtrend"). This makes the agent's decisions fully auditable and judge-ready, bridging the gap between black-box RL and enterprise explainability requirements.
 
+## ⚙️ Pipeline & Architecture
+
+### 🔄 System Workflow
+The Swiftlogic CommerceOps v2 pipeline is designed for reproducible research and autonomous deployment. It bridges the gap between high-scale RL training and explainable enterprise operations.
+
+```mermaid
+graph TD
+    subgraph "1. Training Phase (Colab/HuggingFace)"
+    T1[swiftlogic_grpo_training.ipynb] --> T2[GRPO Training Loop]
+    T2 --> T3[Policy Optimization]
+    T3 --> T4[LoRA Adapter Weights]
+    end
+
+    subgraph "2. Evaluation & Artifacts (Pipeline)"
+    E1[Base Metrics] --> E2[Reward & Exploration Curves]
+    E2 --> E3[Generalization Sweep]
+    E3 --> E4[Composite Score Calculation]
+    end
+
+    subgraph "3. Deployment (FastAPI + Docker)"
+    D1[uvicorn server.app:app] --> D2[OpenEnv API Endpoints]
+    D2 --> D3[Inference / CEO Layer]
+    D3 --> D4[Hugging Face Space Demo]
+    end
+
+    T4 -.-> E1
+    E4 -.-> D3
+```
+
+### 🧠 Agent Decision Loop
+Every day, the agent processes complex signals to make high-stakes business decisions. The environment simulates realistic market pressures including competitor reactions and stochastic demand.
+
+```mermaid
+graph LR
+    subgraph "E-Commerce Environment"
+    State[<b>Observation</b><br/>Bank, Inv, Tickets, Prices] --> Agent
+    Agent[<b>AI Agent</b><br/>(Trained Policy)] --> Action[<b>Action</b><br/>Restock, Price, Refund, etc.]
+    Action --> Physics[<b>Market Physics</b><br/>Demand, Competitors, Shocks]
+    Physics --> Reward[<b>Reward Signal</b><br/>Profit, Stability, CSAT]
+    Reward --> State
+    end
+```
+
 ---
 
 ## 🚀 Quick Start for Reviewers
