@@ -752,9 +752,69 @@ def render_autonomous_section() -> str:
     return (
         '<section class="r2-section" id="autonomous">'
         '<p class="r2-section-eyebrow">Autonomous run theater</p>'
-        '<h2 class="r2-section-title">Press run. Watch policy behaviour unfold live.</h2>'
-        '<p class="r2-section-lede">Observe -> Reason -> Act -> React appears step-by-step with a CEO trace, '
-        'live bank trajectory, and action mix. Then compare baseline vs trained on the same seed.</p>'
+        '<h2 class="r2-section-title">Full pipeline schematic</h2>'
+        '<div style="overflow-x:auto;padding:16px 0;">'
+        '<svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" style="max-width:900px;width:100%;height:auto;font-family:Inter,system-ui,sans-serif;">'
+        # --- animated defs ---
+        '<defs>'
+        '<marker id="arw" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#b08968"/></marker>'
+        '<linearGradient id="nodeGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#faf7f2"/><stop offset="100%" stop-color="#f0ece4"/></linearGradient>'
+        '<filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/></filter>'
+        '</defs>'
+        # --- flow arrows (animated dash) ---
+        '<style>'
+        '@keyframes flowDash{0%{stroke-dashoffset:12}100%{stroke-dashoffset:0}}'
+        '.flow-arrow{stroke:#b08968;stroke-width:2;fill:none;marker-end:url(#arw);stroke-dasharray:6 6;animation:flowDash 0.8s linear infinite}'
+        '.node-box{fill:url(#nodeGrad);stroke:#e7e1d6;stroke-width:1.5;rx:12;filter:url(#shadow)}'
+        '.node-icon{font-size:22px;text-anchor:middle;dominant-baseline:central}'
+        '.node-label{font-size:10px;fill:#475569;text-anchor:middle;font-weight:600}'
+        '.node-sub{font-size:8px;fill:#6b7280;text-anchor:middle}'
+        '</style>'
+        # --- Node 1: Market State ---
+        '<rect class="node-box" x="10" y="60" width="120" height="100"/>'
+        '<text class="node-icon" x="70" y="95">📊</text>'
+        '<text class="node-label" x="70" y="125">Market State</text>'
+        '<text class="node-sub" x="70" y="138">inventory · tickets · bank</text>'
+        # --- Arrow 1→2 ---
+        '<line class="flow-arrow" x1="130" y1="110" x2="165" y2="110"/>'
+        # --- Node 2: Operator Core ---
+        '<rect class="node-box" x="170" y="60" width="120" height="100"/>'
+        '<text class="node-icon" x="230" y="95">🏭</text>'
+        '<text class="node-label" x="230" y="125">Operator Core</text>'
+        '<text class="node-sub" x="230" y="138">Qwen 2.5 · LoRA</text>'
+        # --- Arrow 2→3 ---
+        '<line class="flow-arrow" x1="290" y1="110" x2="325" y2="110"/>'
+        # --- Node 3: Decision Engine ---
+        '<rect class="node-box" x="330" y="60" width="120" height="100"/>'
+        '<text class="node-icon" x="390" y="95">⚙️</text>'
+        '<text class="node-label" x="390" y="125">Decision Engine</text>'
+        '<text class="node-sub" x="390" y="138">JSON action policy</text>'
+        # --- Arrow 3→4 ---
+        '<line class="flow-arrow" x1="450" y1="110" x2="485" y2="110"/>'
+        # --- Node 4: Action Dispatch ---
+        '<rect class="node-box" x="490" y="60" width="120" height="100"/>'
+        '<text class="node-icon" x="550" y="95">⚡</text>'
+        '<text class="node-label" x="550" y="125">Action Dispatch</text>'
+        '<text class="node-sub" x="550" y="138">restock · refund · ad</text>'
+        # --- Arrow 4→5 ---
+        '<line class="flow-arrow" x1="610" y1="110" x2="645" y2="110"/>'
+        # --- Node 5: Environment Reactor ---
+        '<rect class="node-box" x="650" y="60" width="120" height="100"/>'
+        '<text class="node-icon" x="710" y="95">🔄</text>'
+        '<text class="node-label" x="710" y="125">OpenEnv Reactor</text>'
+        '<text class="node-sub" x="710" y="138">reward · next state</text>'
+        # --- Arrow 5→6 (Grader) ---
+        '<line class="flow-arrow" x1="770" y1="110" x2="800" y2="110"/>'
+        # --- Node 6: Grader ---
+        '<rect class="node-box" x="805" y="70" width="80" height="80"/>'
+        '<text class="node-icon" x="845" y="100">🏆</text>'
+        '<text class="node-label" x="845" y="125">Grader</text>'
+        '<text class="node-sub" x="845" y="137">6 tasks</text>'
+        # --- Feedback loop arrow (bottom curve back to Node 1) ---
+        '<path class="flow-arrow" d="M710,160 L710,190 L70,190 L70,160" />'
+        '<text class="node-sub" x="390" y="208">← feedback loop: reward signal drives next observation →</text>'
+        '</svg>'
+        '</div>'
         '</section>'
     )
 
@@ -763,25 +823,86 @@ def render_authenticity_strip() -> str:
     readiness = judge_readiness()
     coverage = generalization_covers_unseen_configs()
     fresh = freshness_summary()
-    fresh_items = []
+
+    # Build visual freshness cards
+    fresh_cards = []
     for key in ["reward_curve.png", "exploration_curve.png", "generalization.png", "before_after_comparison.png", "failure_vs_recovery.png"]:
         item = fresh.get(key, {})
+        short_name = key.replace(".png", "").replace("_", " ").title()
         if item.get("exists"):
-            fresh_items.append(f"{key}: {item.get('age_minutes', '?')} min old")
+            age = item.get("age_minutes", "?")
+            # SVG circular gauge — green if <60 min, amber if <1440 min, red otherwise
+            if isinstance(age, (int, float)):
+                color = "#6b8e6b" if age < 60 else ("#b08968" if age < 1440 else "#b3543c")
+                age_label = f"{age:.0f}m" if age < 60 else f"{age/60:.1f}h"
+            else:
+                color = "#6b7280"
+                age_label = "?"
+            fresh_cards.append(
+                f'<div style="text-align:center;padding:10px;">'
+                f'<svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="#e7e1d6" stroke-width="4"/>'
+                f'<circle cx="28" cy="28" r="24" fill="none" stroke="{color}" stroke-width="4" stroke-dasharray="151" stroke-dashoffset="15" stroke-linecap="round" transform="rotate(-90 28 28)"/>'
+                f'<text x="28" y="32" text-anchor="middle" font-size="11" fill="{color}" font-weight="700">{age_label}</text></svg>'
+                f'<div style="font-size:10px;color:#475569;margin-top:4px;font-weight:600;">{html.escape(short_name)}</div>'
+                f'</div>'
+            )
         else:
-            fresh_items.append(f"{key}: missing")
-    coverage_text = ", ".join(coverage.get("covered", [])) if coverage.get("covered") else "none"
-    missing_text = ", ".join(coverage.get("missing", [])) if coverage.get("missing") else "none"
-    status_kind = "good" if readiness.ready else "warn"
+            fresh_cards.append(
+                f'<div style="text-align:center;padding:10px;">'
+                f'<svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="#e7e1d6" stroke-width="4"/>'
+                f'<text x="28" y="32" text-anchor="middle" font-size="10" fill="#b3543c" font-weight="700">N/A</text></svg>'
+                f'<div style="font-size:10px;color:#b3543c;margin-top:4px;font-weight:600;">{html.escape(short_name)}</div>'
+                f'</div>'
+            )
+
+    covered = coverage.get("covered", [])
+    missing = coverage.get("missing", [])
+
+    # Build coverage badges
+    cov_badges = "".join(
+        f'<span style="display:inline-block;padding:4px 12px;margin:3px;border-radius:20px;font-size:11px;font-weight:600;'
+        f'background:#e8f5e8;color:#3e6342;">{html.escape(c)}</span>'
+        for c in covered
+    )
+    miss_badges = "".join(
+        f'<span style="display:inline-block;padding:4px 12px;margin:3px;border-radius:20px;font-size:11px;font-weight:600;'
+        f'background:#fdecea;color:#923a3a;">{html.escape(m)}</span>'
+        for m in missing
+    )
+
+    status_color = "#6b8e6b" if readiness.ready else "#b08968"
+    status_icon = "✅" if readiness.ready else "⚠️"
+    prov_label = readiness.provenance.value.replace("_", " ").title()
+    adapter_label = readiness.adapter_status.replace("_", " ").title()
+
     return (
         '<section class="r2-section" id="authenticity">'
-        '<p class="r2-section-eyebrow">Authenticity gate</p>'
-        '<h2 class="r2-section-title">Judge trust: provenance and freshness</h2>'
-        f'{banner("Phase-0 readiness", f"provenance={readiness.provenance.value}, adapter={readiness.adapter_status}. Missing unseen configs: {missing_text}.", kind=status_kind)}'
-        '<div class="r2-card"><p style="margin:0;font-size:13px;">'
-        f'Unseen config coverage: <strong>{html.escape(coverage_text)}</strong><br/>'
-        f'Artifact freshness: {html.escape(" | ".join(fresh_items))}'
-        '</p></div>'
+        '<p class="r2-section-eyebrow">Provenance tracker</p>'
+        '<h2 class="r2-section-title">Artifact integrity & deployment readiness</h2>'
+        # --- Status row ---
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:20px 0;">'
+        # Card 1: Readiness
+        f'<div class="r2-card" style="flex:1;min-width:200px;text-align:center;border-left:4px solid {status_color};">'
+        f'<div style="font-size:28px;margin-bottom:4px;">{status_icon}</div>'
+        f'<div style="font-size:12px;font-weight:700;color:#2c3e50;">Deployment Readiness</div>'
+        f'<div style="font-size:11px;color:#6b7280;margin-top:4px;">Provenance: <strong>{html.escape(prov_label)}</strong></div>'
+        f'<div style="font-size:11px;color:#6b7280;">Adapter: <strong>{html.escape(adapter_label)}</strong></div>'
+        f'</div>'
+        # Card 2: Config Coverage
+        '<div class="r2-card" style="flex:1;min-width:200px;text-align:center;">'
+        '<div style="font-size:28px;margin-bottom:4px;">🗺️</div>'
+        '<div style="font-size:12px;font-weight:700;color:#2c3e50;">Config Coverage</div>'
+        f'<div style="margin-top:6px;">{cov_badges if cov_badges else "<em style=\\"color:#6b7280;font-size:11px;\\">none verified</em>"}</div>'
+        f'{"<div style=\\"margin-top:4px;font-size:10px;color:#923a3a;\\">Missing: " + miss_badges + "</div>" if miss_badges else ""}'
+        '</div>'
+        '</div>'
+        # --- Freshness radar ---
+        '<div class="r2-card" style="margin-top:12px;">'
+        '<div style="font-size:12px;font-weight:700;color:#2c3e50;margin-bottom:8px;">Artifact freshness radar</div>'
+        '<div style="display:flex;justify-content:space-around;flex-wrap:wrap;">'
+        + "".join(fresh_cards)
+        + '</div>'
+        '</div>'
         '</section>'
     )
 

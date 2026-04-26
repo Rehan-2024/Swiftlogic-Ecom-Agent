@@ -22,6 +22,7 @@ import html as html_lib
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -388,29 +389,13 @@ def build_demo() -> gr.Blocks:
                             with gr.Row():
                                 bank_plot = gr.Plot(label="Cash trajectory")
                                 action_plot = gr.Plot(label="Action mix / comparison")
-                            with gr.Row():
-                                policy_plot = gr.Plot(label="Execution quality")
-                                flow_plot = gr.Plot(label="Agent Decision Flow Schematic")
+                            policy_plot = gr.Plot(label="Execution quality")
                             log_output = gr.HTML('<div class="r2-live-log"><div class="line">Step log will appear here.</div></div>')
                             with gr.Group(visible=False) as store_group:
                                 store_html = gr.HTML()
                             scorecard_html = gr.HTML("")
 
-            with gr.Tab("System Schematic"):
-                gr.Markdown("### Architectural Overview & Process Flow")
-                gr.Markdown("""
-```mermaid
-graph LR
-    A[Environment Observation] -->|State: Inventory, Tickets| B(CEO Agent)
-    B -->|Reasoning Engine| C{Decision Module}
-    C -->|Wait| D[No Action]
-    C -->|Restock / Negotiate| E[Supplier API]
-    C -->|Refund| F[Support Queue]
-    C -->|Ad Spend| G[Marketing Engine]
-    D & E & F & G --> H[OpenEnv Backend]
-    H -->|Reward & Next State| A
-```
-""")
+
 
             with gr.Tab("Learning Ledger"):
                 gr.Markdown("### Real artifacts from latest pipeline run")
@@ -453,7 +438,7 @@ graph LR
         run_event = run_btn.click(
             fn=_dispatch_live_run,
             inputs=[run_mode, policy_radio, seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
         )
         rerun_event = rerun_btn.click(
             fn=_dispatch_live_run,
