@@ -1,15 +1,15 @@
 {
-  "title": "Siyaani Commerce - From Storefront to Self-Driving Brand",
-  "subtitle": "A 50-day business cycle, run by an LLM agent trained with GRPO on the OpenEnv contract.",
+  "title": "Siyaani Commerce - Ethnic wear, self-driving ops",
+  "subtitle": "A 50-day store cycle run by a GRPO-tuned Qwen agent on the OpenEnv JSON action contract (saree, kurta, dupatta, cotton sets).",
   "chapters": [
     {
       "id": "ch1_awakening",
       "order": 1,
-      "title": "Chapter 1 - The Awakening",
+      "title": "Chapter 1 - Storefront and stockroom",
       "photo": "01_storefront_dawn.jpg",
-      "alt": "A storefront at dawn, the AI inherits a 50-day cycle.",
+      "alt": "Indian ethnic-wear display and store lighting at opening hour.",
       "tag": "Day 0",
-      "story": "Siyaani is a small Indian ethnic-wear brand. Inventory, refunds, ad spend, supplier negotiations - every morning the founder makes the same fifty decisions. We replaced that founder with a Qwen2.5-1.5B model fine-tuned with Group-Relative Policy Optimisation against a real OpenEnv contract.",
+      "story": "Siyaani is a D2C label built on sarees, silk kurtas, cotton coordinates, and dupattas. Every morning the founder juggles restocks, refunds, ad spend, and supplier follow-ups. That loop is now a Qwen2.5-1.5B policy, fine-tuned with GRPO, issuing strict JSON to the same OpenEnv server the judges use.",
       "metric_key": "starting_bank",
       "metric_label": "Starting bank",
       "metric_unit": "INR"
@@ -17,11 +17,11 @@
     {
       "id": "ch2_craft",
       "order": 2,
-      "title": "Chapter 2 - The Craft",
+      "title": "Chapter 2 - Craft and inventory",
       "photo": "02_textile_craft.jpg",
-      "alt": "Hand-loomed fabric, the inventory the AI must protect.",
+      "alt": "Folded ethnic fabrics, embroidery, and colour stories for the Siyaani catalog.",
       "tag": "Inventory",
-      "story": "Six SKUs, one supplier, three customer-ticket types. The agent observes inventory, prices, competitor prices, pending orders, and an active ticket queue. It must produce a strict-JSON action chosen from six action schemas. No tool use, no chain-of-thought escape hatch - the OpenEnv server validates and rejects malformed actions.",
+      "story": "SKUs in config map to the live observation: units on hand, your ticket queue, and competitor pricing per style. The agent must return exactly one of six action schemas. The engine validates; malformed JSON is rejected, not silently repaired.",
       "metric_key": "format_compliance",
       "metric_label": "Format compliance",
       "metric_unit": "%"
@@ -29,11 +29,11 @@
     {
       "id": "ch3_decision",
       "order": 3,
-      "title": "Chapter 3 - The Decision",
+      "title": "Chapter 3 - Policy on the sales floor",
       "photo": "03_market_decision.jpg",
-      "alt": "Every day a hundred decisions, the policy chooses one.",
+      "alt": "Busy retail floor with ethnic and fusion wear for everyday and festive use.",
       "tag": "Policy",
-      "story": "GRPO trains the policy to favour the actions that beat its own group of samples on a composite reward. Over training the agent moves from refund-spam (heuristic floor) to a deliberate mix of restock + set_price + negotiate. The exploration curve below is that shift in entropy.",
+      "story": "GRPO compares bundled samples on composite reward, not hand labels. The policy shifts from a refund-heavy floor toward restock, set_price, and negotiate. The proof tab’s entropy curve is the signature of that shift.",
       "metric_key": "exploration_entropy_delta",
       "metric_label": "Entropy: before to after",
       "metric_unit": "nats"
@@ -41,11 +41,11 @@
     {
       "id": "ch4_outcome",
       "order": 4,
-      "title": "Chapter 4 - The Outcome",
+      "title": "Chapter 4 - Beyond the training catalog",
       "photo": "04_growth_horizon.jpg",
-      "alt": "Bank balance, customer satisfaction, survival across configurations.",
+      "alt": "Styling and display—same adapter, new business_id generalisation test.",
       "tag": "Generalisation",
-      "story": "The same trained policy is then dropped into two unseen businesses: medplus_pharmacy and stackbase_saas. No fine-tuning, no per-business prompt swap. The composite-score table on the Generalisation tab proves the policy carries across configs - this is the hard part judges look for.",
+      "story": "The same adapter is evaluated on unseen configs, e.g. medplus_pharmacy and stackbase_saas, with no per-business prompt swap. The Generalisation tab shows per-config banks and grader lines—this is the stress test, not a slide deck claim.",
       "metric_key": "generalization_composite",
       "metric_label": "Generalisation composite",
       "metric_unit": "score"
@@ -53,10 +53,10 @@
   ],
   "transition": {
     "css": "fade-in",
-    "duration_ms": 320,
+    "duration_ms": 360,
     "easing": "ease-out",
-    "notes": "Subtle fade only. No parallax, no scale, no glow. Honors the no-AI-shiny rule in section 8.3 of the Round-2 plan."
+    "notes": "Text uses .r2-fade-in-text; no parallax, no large hover scale (plan 8.3)."
   },
-  "version": 1,
+  "version": 2,
   "last_edited": "2026-04-26"
 }

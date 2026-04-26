@@ -6,6 +6,19 @@ import html
 from typing import Any, Dict, Iterable, List, Optional
 
 
+def patience_box(
+    title: str = "Please be patient",
+    body: str = "This step can take a while while the environment and policy are prepared.",
+) -> str:
+    """Callout for long-running OpenEnv / model work — shown at the top of the step card."""
+    return (
+        '<div class="r2-patience-box r2-fade-in-text" role="status" aria-live="polite">'
+        f'<div class="r2-patience-title">{html.escape(title)}</div>'
+        f'<p class="r2-patience-body">{html.escape(body)}</p>'
+        "</div>"
+    )
+
+
 def banner(title: str, body: str, *, kind: str = "neutral") -> str:
     """kind in {'neutral','warn','danger','good'}."""
     cls = "r2-banner"

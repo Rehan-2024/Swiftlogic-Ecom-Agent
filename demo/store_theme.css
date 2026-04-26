@@ -1,0 +1,221 @@
+/* Store-facing polish layer on top of theme.css */
+
+.r2-store-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-top: 14px;
+}
+
+.r2-store-panel h4 {
+  margin: 0 0 10px 0 !important;
+  font-size: 15px !important;
+}
+
+.r2-store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.r2-store-kpi {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.r2-store-kpi .k {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.r2-store-kpi .v {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.r2-store-kpi .v.is-profit {
+  color: var(--accent-2);
+}
+
+.r2-store-kpi .v.is-loss {
+  color: var(--danger);
+}
+
+.r2-ticket-badge {
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.r2-ticket-badge.is-high {
+  background: #f7e7e2;
+  border-color: #e2bcae;
+  color: #7a3924;
+}
+
+.r2-ticket-badge.is-mid {
+  background: #fbf3df;
+  border-color: #ead8a3;
+  color: #7a5b18;
+}
+
+.r2-ticket-badge.is-low {
+  background: #eef4ee;
+  border-color: #cfddcf;
+  color: #466d46;
+}
+
+.r2-live-log {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 12px 14px;
+  max-height: 360px;
+  overflow-y: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.r2-live-log .line {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+  color: var(--ink-soft);
+}
+
+.r2-live-log .line:last-child {
+  border-bottom: none;
+}
+
+.r2-live-log .line.day {
+  color: var(--ink);
+}
+
+.r2-live-log .line.summary {
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+/* Product cards (live store view) - no remote images, all CSS */
+.r2-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.r2-product-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  min-height: 92px;
+}
+
+.r2-product-thumb {
+  flex: 0 0 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.05em;
+}
+.r2-product-thumb.is-photo {
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.r2-product-thumb.is-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 200ms ease;
+}
+.r2-store-pending {
+  font-size: 13px;
+  color: var(--ink-muted);
+  padding: 8px 0 0 0;
+}
+
+.r2-product-body {
+  flex: 1 1 auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.r2-product-name {
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.r2-product-sku {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.r2-product-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.r2-product-price {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.r2-product-margin {
+  color: var(--accent-2);
+}
+
+.r2-product-stock {
+  font-weight: 700;
+}
+
+.r2-product-stock.is-ok {
+  color: var(--accent-2);
+}
+
+.r2-product-stock.is-mid {
+  color: var(--warn);
+}
+
+.r2-product-stock.is-low {
+  color: var(--danger);
+}
+
+.r2-product-comp {
+  color: var(--ink-muted);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.r2-product-empty {
+  padding: 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-size: 13px;
+}

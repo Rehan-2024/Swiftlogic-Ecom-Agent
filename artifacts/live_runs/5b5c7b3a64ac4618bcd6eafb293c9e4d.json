@@ -1,0 +1,160 @@
+{
+  "run_id": "5b5c7b3a64ac4618bcd6eafb293c9e4d",
+  "started_at": "2026-04-26T01:46:26.150621+00:00",
+  "ended_at": "2026-04-26T01:46:26.239617+00:00",
+  "seed": 2026,
+  "policy_type": "baseline_wait_only",
+  "business_id": "default",
+  "endpoint_base_url": "http://127.0.0.1:55113",
+  "endpoint_call_counts": {
+    "reset": 1,
+    "step": 5,
+    "state": 0,
+    "grader": 1,
+    "tasks": 0,
+    "config": 0,
+    "health": 0
+  },
+  "fallback_count": 0,
+  "git_sha": "091c6f1e423689ed1bead2f90e7e817940f5ea8b",
+  "adapter_sha": null,
+  "starting_bank": 50000.0,
+  "final_bank": 165500.0,
+  "total_reward": -1.299732,
+  "n_steps": 5,
+  "bankrupt": false,
+  "done_reason": "max_steps_reached",
+  "grader_scores": {
+    "triage_task": 0.01,
+    "inventory_task": 0.01,
+    "profit_task": 0.99,
+    "stability_task": 0.99,
+    "competitor_response_task": 0.8255,
+    "crisis_recovery_task": 0.99
+  },
+  "action_summary": {
+    "by_action": {
+      "wait": {
+        "attempts": 5,
+        "successes": 5,
+        "success_rate": 1.0
+      }
+    },
+    "distribution": {
+      "wait": 1.0
+    },
+    "entropy": 0.0
+  },
+  "steps": [
+    {
+      "step": 1,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": 0.030207,
+      "bank_balance": 73600.0,
+      "inventory_summary": {
+        "silk_kurta": 46,
+        "cotton_set": 21,
+        "linen_dupatta": 19,
+        "silk_saree": 8
+      },
+      "intent": "maintain_balance",
+      "action_quality": "neutral",
+      "confidence": 1.0,
+      "info_error": null,
+      "success": true,
+      "fallback": null,
+      "done": false,
+      "endpoint_call_id": 1
+    },
+    {
+      "step": 2,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": 0.03013,
+      "bank_balance": 96600.0,
+      "inventory_summary": {
+        "silk_kurta": 41,
+        "cotton_set": 13,
+        "linen_dupatta": 17,
+        "silk_saree": 7
+      },
+      "intent": "maintain_balance",
+      "action_quality": "neutral",
+      "confidence": 1.0,
+      "info_error": null,
+      "success": true,
+      "fallback": null,
+      "done": false,
+      "endpoint_call_id": 2
+    },
+    {
+      "step": 3,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.318733,
+      "bank_balance": 130200.0,
+      "inventory_summary": {
+        "silk_kurta": 36,
+        "cotton_set": 6,
+        "linen_dupatta": 14,
+        "silk_saree": 2
+      },
+      "intent": "clear_tickets",
+      "action_quality": "neutral",
+      "confidence": 0.9508,
+      "info_error": null,
+      "success": true,
+      "fallback": null,
+      "done": false,
+      "endpoint_call_id": 3
+    },
+    {
+      "step": 4,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.520523,
+      "bank_balance": 148700.0,
+      "inventory_summary": {
+        "silk_kurta": 33,
+        "cotton_set": 0,
+        "linen_dupatta": 11,
+        "silk_saree": 1
+      },
+      "intent": "clear_tickets",
+      "action_quality": "neutral",
+      "confidence": 0.7624,
+      "info_error": null,
+      "success": true,
+      "fallback": null,
+      "done": false,
+      "endpoint_call_id": 4
+    },
+    {
+      "step": 5,
+      "action": {
+        "action_type": "wait"
+      },
+      "reward": -0.520812,
+      "bank_balance": 165500.0,
+      "inventory_summary": {
+        "silk_kurta": 28,
+        "cotton_set": 0,
+        "linen_dupatta": 7,
+        "silk_saree": 0
+      },
+      "intent": "avoid_stockout",
+      "action_quality": "neutral",
+      "confidence": 0.7626,
+      "info_error": null,
+      "success": true,
+      "fallback": null,
+      "done": false,
+      "endpoint_call_id": 5
+    }
+  ]
+}

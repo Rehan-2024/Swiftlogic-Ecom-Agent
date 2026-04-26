@@ -44,7 +44,7 @@ from typing import Any, Dict, Optional, Type, get_args
 import uvicorn
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
 
 
@@ -452,8 +452,10 @@ def create_app(config_path: Optional[str] = None) -> FastAPI:
             if "text/html" in accept and "application/json" not in accept:
                 wants_html = True
         if wants_html:
-            from server.landing import render_landing  # local import
-            return HTMLResponse(render_landing(state))
+            # Browsers land on the long-form Gradio storytelling app
+            # (mounted under /demo/ by demo/entry.py). The OpenEnv JSON
+            # contract below stays the default for non-browser clients.
+            return RedirectResponse(url="/demo/", status_code=307)
 
         if env is None:
             return {

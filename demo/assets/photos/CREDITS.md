@@ -1,27 +1,16 @@
 # Photo credits
 
-Real photos served by [Lorem Picsum](https://picsum.photos),
-which proxies images from [Unsplash](https://unsplash.com) under the
-[Unsplash License](https://unsplash.com/license) (free for commercial and
-non-commercial use, no permission needed; attribution appreciated).
+Story and product thumbnails are **downloaded once** into this folder and served locally via `/static/demo/photos/` (no runtime fetch from the browser).
 
-These are CURATED PLACEHOLDERS chosen for the Round-2 dashboard's storytelling
-beats. To swap for brand-owned photography:
+| File | Use | Source | License |
+| --- | --- | --- | --- |
+| `01_storefront_dawn.jpg` | Chapter 1 hero | [Unsplash](https://images.unsplash.com/photo-1596462502278-27bfdc403348) | [Unsplash License](https://unsplash.com/license) |
+| `02_textile_craft.jpg` | Chapter 2 | [Unsplash](https://images.unsplash.com/photo-1610030469983-98e550d6193c) | Unsplash License |
+| `03_market_decision.jpg` | Chapter 3 | [Unsplash](https://images.unsplash.com/photo-1596462502278-27bfdc403348) | Unsplash License |
+| `04_growth_horizon.jpg` | Chapter 4 | [Unsplash](https://images.unsplash.com/photo-1572804013309-59a88b7e92f1) | Unsplash License |
+| `prd_silk_saree.jpg` | SKU tile (saree) | [Unsplash](https://images.unsplash.com/photo-1610030469983-98e550d6193c) | Unsplash License |
+| `prd_silk_kurta.jpg` | SKU tile (kurta) | [Unsplash](https://images.unsplash.com/photo-1596462502278-27bfdc403348) | Unsplash License |
+| `prd_cotton_set.jpg` | SKU tile (cotton) | [Unsplash](https://images.unsplash.com/photo-1572804013309-59a88b7e92f1) | Unsplash License |
+| `prd_linen_dupatta.jpg` | SKU tile (dupatta) | [Lorem Picsum](https://picsum.photos/id/1013/800/800) (Unsplash-sourced proxy) | Unsplash License via Picsum |
 
-1. Replace the file at the path below with your own JPEG (same filename).
-2. Update the `Source` and `License` columns in this table.
-3. The dashboard re-reads the directory at process start; restart the Space.
-
-| File | Chapter | Source | License | Bytes | Status |
-| --- | --- | --- | --- | --- | --- |
-| `01_storefront_dawn.jpg` | Chapter 1 - The Awakening | <https://picsum.photos/id/1011/1600/900.jpg> | Unsplash License (via Lorem Picsum) | 100584 | downloaded |
-| `02_textile_craft.jpg` | Chapter 2 - The Craft | <https://picsum.photos/id/1080/1200/900.jpg> | Unsplash License (via Lorem Picsum) | 201647 | downloaded |
-| `03_market_decision.jpg` | Chapter 3 - The Decision | <https://picsum.photos/id/1015/1200/900.jpg> | Unsplash License (via Lorem Picsum) | 196429 | downloaded |
-| `04_growth_horizon.jpg` | Chapter 4 - The Outcome | <https://picsum.photos/id/1043/1600/900.jpg> | Unsplash License (via Lorem Picsum) | 367061 | downloaded |
-
-## Story tags (used by the dashboard)
-
-- **01_storefront_dawn.jpg** -- Chapter 1 - The Awakening -- _A storefront at dawn, the AI inherits a 50-day cycle._
-- **02_textile_craft.jpg** -- Chapter 2 - The Craft -- _Hand-loomed fabric, the inventory the AI must protect._
-- **03_market_decision.jpg** -- Chapter 3 - The Decision -- _Every day a hundred decisions, the policy chooses one._
-- **04_growth_horizon.jpg** -- Chapter 4 - The Outcome -- _Bank balance, customer satisfaction, survival across configurations._
+To replace with brand-owned photography, drop new JPEGs using the same filenames and restart the app.

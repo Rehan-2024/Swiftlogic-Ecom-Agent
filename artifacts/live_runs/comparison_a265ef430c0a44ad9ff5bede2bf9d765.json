@@ -1,0 +1,58 @@
+{
+  "comparison_id": "a265ef430c0a44ad9ff5bede2bf9d765",
+  "created_at": "2026-04-26T02:39:11.572901+00:00",
+  "seed": 20260425,
+  "business_id": "siyaani_fashion",
+  "run_a": {
+    "policy": "baseline_zero_shot",
+    "run_id": "4741364c65984fd2a2b1451ba1b720b2",
+    "path": "D:\\CMS\\artifacts\\live_runs\\4741364c65984fd2a2b1451ba1b720b2.json"
+  },
+  "run_b": {
+    "policy": "trained",
+    "run_id": "57de2f14f58b4502985cd98b8b527b2d",
+    "path": "D:\\CMS\\artifacts\\live_runs\\57de2f14f58b4502985cd98b8b527b2d.json"
+  },
+  "summary": {
+    "a": {
+      "policy": "baseline_zero_shot",
+      "final_bank": 225000.0,
+      "total_reward": -2.211076,
+      "bankrupt": false,
+      "n_steps": 10,
+      "fallback_count": 10,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7223,
+        "crisis_recovery_task": 0.99
+      },
+      "entropy": 0.0,
+      "distribution": {
+        "wait": 1.0
+      }
+    },
+    "b": {
+      "policy": "trained",
+      "final_bank": 225000.0,
+      "total_reward": -2.211076,
+      "bankrupt": false,
+      "n_steps": 10,
+      "fallback_count": 10,
+      "grader_scores": {
+        "triage_task": 0.01,
+        "inventory_task": 0.01,
+        "profit_task": 0.99,
+        "stability_task": 0.99,
+        "competitor_response_task": 0.7223,
+        "crisis_recovery_task": 0.99
+      },
+      "entropy": 0.0,
+      "distribution": {
+        "wait": 1.0
+      }
+    }
+  }
+}
