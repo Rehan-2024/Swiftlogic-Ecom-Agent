@@ -1,12 +1,11 @@
 """
-SINGLE-CELL COLAB GRPO TRAINING SCRIPT v5
-Pure HTTP (no repo clone), tuned for quick signal and clear reporting.
+SINGLE-CELL COLAB GRPO TRAINING SCRIPT v6
+Pure HTTP, tuned for quick signal and clear reporting.
 
-Key fixes vs v4:
-- Stronger backend checks (/health + /reset + /step smoke test)
-- Retry-enabled HTTP session for unstable tunnels
-- Explicit learning signal (early vs late reward, gain, verdict)
-- Up-to-date artifact manifest with timestamp + config + status
+Key features in v6:
+- Clones GitHub repository automatically
+- Runs the environment locally via FastAPI
+- Uploads reward curve and adapter weights to Hugging Face Hub
 - Default MAX_EPISODES=10 as requested
 """
 
@@ -36,7 +35,7 @@ def sh(cmd: str):
 # 1. DEPENDENCIES
 # ==============================================================================
 sh("pip install -q unsloth")
-sh("pip install -q requests matplotlib numpy")
+sh("pip install -q requests matplotlib numpy huggingface_hub")
 print("Dependencies installed")
 
 import matplotlib
@@ -46,6 +45,7 @@ import torch
 import torch.optim as optim
 import transformers
 import random
+import time
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -69,9 +69,35 @@ print(f"Imports ready | CUDA: {torch.cuda.is_available()}")
 
 
 # ==============================================================================
+# 1.5 REPO CLONE & LOCAL SERVER
+# ==============================================================================
+print("\n--- CLONING REPO AND STARTING SERVER ---")
+if not os.path.exists("repo"):
+    sh("git clone https://github.com/Rehan-2024/Swiftlogic-Ecom-Agent.git repo")
+else:
+    sh("cd repo && git pull")
+
+sh("pip install -q -r repo/requirements.txt")
+
+# Start FastAPI server
+server_proc = subprocess.Popen(
+    ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"],
+    cwd="repo",
+    stdout=open("server.log", "w"),
+    stderr=subprocess.STDOUT,
+)
+print("Waiting for server to start...")
+time.sleep(8)
+if server_proc.poll() is not None:
+    with open("server.log", "r") as f:
+        print("SERVER FAILED TO START:\n", f.read())
+    raise RuntimeError("FastAPI server failed to start")
+print("Server started successfully")
+
+# ==============================================================================
 # 2. MASTER CONFIGURATION (edit this only)
 # ==============================================================================
-ENV_URL = "https://encircle-lively-scuttle.ngrok-free.dev"
+ENV_URL = "http://localhost:7860"
 
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 MAX_EPISODES = 10
@@ -1006,3 +1032,38 @@ for k, v in success_checks.items():
     print(f"  {'PASS' if v else 'FAIL'}  {k}")
 print("=" * 64)
 print("All artifacts generated." if all_ok else "Some artifacts missing. Check errors above.")
+
+# ==============================================================================
+# 10. HUGGINGFACE UPLOAD
+# ==============================================================================
+print("\n--- UPLOADING TO HUGGINGFACE ---")
+from huggingface_hub import HfApi, login
+HF_TOKEN = os.environ.get("HF_TOKEN")
+if HF_TOKEN:
+    try:
+        login(token=HF_TOKEN)
+        api = HfApi()
+        repo_id = "Swiftlogic/E-commerce-agent"
+        
+        # Upload adapter
+        print(f"Uploading adapter to {repo_id}...")
+        api.upload_folder(
+            folder_path="artifacts/adapter",
+            repo_id=repo_id,
+            repo_type="model",
+            path_in_repo="adapter"
+        )
+        
+        # Upload reward curve
+        print(f"Uploading reward curve to {repo_id}...")
+        api.upload_file(
+            path_or_fileobj="artifacts/reward_curve.png",
+            path_in_repo="artifacts/reward_curve.png",
+            repo_id=repo_id,
+            repo_type="model"
+        )
+        print("Upload successful!")
+    except Exception as e:
+        print(f"Failed to upload to HF: {e}")
+else:
+    print("HF_TOKEN environment variable not set, skipping upload.")
