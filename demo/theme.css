@@ -965,3 +965,33 @@ html, body, #root {
   color: var(--ink);
   font-style: italic;
 }
+
+/* SDG Cards Styling */
+.sdg-card {
+  border-left: 4px solid var(--accent);
+  background-color: var(--surface);
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+.sdg-card:hover {
+  background-color: var(--surface-2);
+  border-left-color: var(--accent-2);
+}
+.sdg-card .sdg-code {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.sdg-card .sdg-title {
+  font-size: 16.5px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  margin: 0 0 10px 0 !important;
+}
+.sdg-card .sdg-text {
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0;
+}

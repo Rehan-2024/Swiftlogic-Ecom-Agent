@@ -21,8 +21,8 @@ node_modules/
 swiftlogic_grpo_training.ipynb
 
 # Training + evaluation artifacts (regenerated on Colab / run_full_pipeline)
-artifacts/
-artifacts/**
+# We need to keep JSON and PNG files for the Hugging Face space UI
+artifacts/*.log
 
 # Developer transcripts & local caches
 agent-transcripts/

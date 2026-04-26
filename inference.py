@@ -38,6 +38,9 @@ from ecom_env import (
     grade_triage_task,
     grade_inventory_task,
     grade_profit_task,
+    grade_stability_task,
+    grade_competitor_response_task,
+    grade_crisis_recovery_task,
 )
 
 
@@ -845,7 +848,14 @@ already in transit.
 Do not output any markdown formatting or explanations, just the JSON object.
 """
 
-    tasks = ["triage_task", "inventory_task", "profit_task"]
+    tasks = [
+        "triage_task", 
+        "inventory_task", 
+        "profit_task", 
+        "stability_task", 
+        "competitor_response_task", 
+        "crisis_recovery_task"
+    ]
 
     for task_name in tasks:
         env.reset(seed=42)
@@ -945,6 +955,18 @@ Do not output any markdown formatting or explanations, just the JSON object.
             )
         elif task_name == "profit_task":
             grader_score = grade_profit_task(
+                initial_state, final_state, context=grader_ctx
+            )
+        elif task_name == "stability_task":
+            grader_score = grade_stability_task(
+                initial_state, final_state, context=grader_ctx
+            )
+        elif task_name == "competitor_response_task":
+            grader_score = grade_competitor_response_task(
+                initial_state, final_state, context=grader_ctx
+            )
+        elif task_name == "crisis_recovery_task":
+            grader_score = grade_crisis_recovery_task(
                 initial_state, final_state, context=grader_ctx
             )
         else:

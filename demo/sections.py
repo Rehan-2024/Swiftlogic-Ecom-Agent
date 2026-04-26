@@ -707,9 +707,10 @@ def render_sdg_section() -> str:
     blocks = []
     for code, title, text in cards:
         blocks.append(
-            '<div class="r2-card">'
-            f'<h4>{html.escape(code)} - {html.escape(title)}</h4>'
-            f'<p>{html.escape(text)}</p>'
+            '<div class="r2-card sdg-card">'
+            f'<div class="sdg-code">{html.escape(code)}</div>'
+            f'<h4 class="sdg-title">{html.escape(title)}</h4>'
+            f'<p class="sdg-text">{html.escape(text)}</p>'
             '</div>'
         )
     return (
