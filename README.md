@@ -106,22 +106,6 @@ graph TD
     E4 -.-> D3
 ```
 
-### 🧠 Agent Decision Loop
-Every day, the agent processes complex signals to make high-stakes business decisions. The environment simulates realistic market pressures including competitor reactions and stochastic demand.
-
-```mermaid
-graph LR
-    subgraph "E-Commerce Environment"
-    State[<b>Observation</b><br/>Bank, Inv, Tickets, Prices] --> Agent
-    Agent[<b>AI Agent</b><br/>(Trained Policy)] --> Action[<b>Action</b><br/>Restock, Price, Refund, etc.]
-    Action --> Physics[<b>Market Physics</b><br/>Demand, Competitors, Shocks]
-    Physics --> Reward[<b>Reward Signal</b><br/>Profit, Stability, CSAT]
-    Reward --> State
-    end
-```
-
----
-
 ## 🚀 Quick Start for Reviewers
 
 A reviewer can read this and run the environment in under 5 minutes.
