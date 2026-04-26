@@ -39,6 +39,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import plotly.graph_objects as go  # noqa: E402
 
 from demo.backend_client import BackendClient, BackendError  # noqa: E402
 from demo.components import banner, patience_box  # noqa: E402
@@ -253,9 +254,6 @@ def _theater_head_html(policy: str, seed: int, business_id: str, base_url: str, 
         '<div class="r2-theater-head">'
         '<div>'
         f'<h3 class="episode-title">Episode - policy <code>{html.escape(policy)}</code> @ seed {int(seed)}</h3>'
-        f'<div class="episode-meta">business <code>{html.escape(business_id or "default")}</code> &middot; '
-        f'backend <code>{html.escape(base_url)}</code> &middot; '
-        f'step {current} / {total} &middot; <strong>{html.escape(status)}</strong></div>'
         '</div>'
         '</div>'
         f'{build_pipeline_html(pct)}'
@@ -386,6 +384,34 @@ def _action_success_chart(attempts: Counter, successes: Counter, *, title: str =
     return fig
 
 
+def _flow_graph(obs: Dict[str, Any], action: Dict[str, Any], reward: float):
+    nodes = {
+        "State": (0, 0, "🔍"),
+        "Reasoner": (1, 0, "🧠"),
+        "Action": (2, 0, "⚡"),
+        "Market": (3, 0, "📈")
+    }
+    edge_x, edge_y = [], []
+    for start, end in [("State", "Reasoner"), ("Reasoner", "Action"), ("Action", "Market")]:
+        x0, y0, _ = nodes[start]
+        x1, y1, _ = nodes[end]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=edge_x, y=edge_y, line=dict(width=3, color=PAL_BORDER), hoverinfo='none', mode='lines'))
+    node_x = [v[0] for v in nodes.values()]
+    node_y = [v[1] for v in nodes.values()]
+    node_text = [f"{v[2]} {k}" for k, v in nodes.items()]
+    colors = [PAL_ACCENT2, PAL_ACCENT, PAL_ACCENT, PAL_DANGER if reward < 0 else PAL_ACCENT2]
+    fig.add_trace(go.Scatter(x=node_x, y=node_y, mode='markers+text', text=node_text, textposition="bottom center",
+                            marker=dict(size=40, color=colors, line=dict(width=2, color=PAL_INK)), textfont=dict(size=10, color=PAL_INK_SOFT)))
+    fig.update_layout(showlegend=False, margin=dict(b=40,l=40,r=40,t=20),
+                      xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 3.5]),
+                      yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1, 1]),
+                      paper_bgcolor=PAL_BG, plot_bgcolor=PAL_BG, height=180)
+    return fig
+
+
 def _entropy(distribution: Dict[str, float]) -> float:
     import math
     h = 0.0
@@ -446,8 +472,8 @@ def stream_live_episode(
     business_id: str,
     max_steps: int = DEMO_MAX_STEPS,
     distribution_view: str = "bar",
-) -> Iterable[Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", str]]:
-    """Yield tuples of (head_html, step_card_html, log_html, bank_fig, action_fig, success_fig, scorecard_html)."""
+) -> Iterable[Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", "go.Figure", str]]:
+    """Yield tuples of (head_html, step_card_html, log_html, bank_fig, action_fig, success_fig, flow_fig, scorecard_html)."""
     seed = int(seed)
     business_id = (business_id or "").strip()
     backend = BackendClient()
@@ -464,6 +490,7 @@ def stream_live_episode(
         _bank_chart([], starting_bank=0.0),
         _action_dist_chart(Counter()),
         _action_success_chart(Counter(), Counter()),
+        go.Figure(),
         "",
     )
 
@@ -479,6 +506,7 @@ def stream_live_episode(
                 _bank_chart([], starting_bank=0.0),
                 _action_dist_chart(Counter()),
                 _action_success_chart(Counter(), Counter()),
+                go.Figure(),
                 "",
             )
             return
@@ -494,6 +522,7 @@ def stream_live_episode(
             _bank_chart([], starting_bank=0.0),
             _action_dist_chart(Counter()),
             _action_success_chart(Counter(), Counter()),
+            go.Figure(),
             "",
         )
         return
@@ -523,6 +552,7 @@ def stream_live_episode(
         _bank_chart(banks, starting_bank),
         _action_dist_chart(action_counts, mode=distribution_view),
         _action_success_chart(action_counts, success_counts),
+        go.Figure(),
         "",
     )
 
@@ -544,6 +574,7 @@ def stream_live_episode(
                 _bank_chart(banks, starting_bank),
                 _action_dist_chart(action_counts, mode=distribution_view),
                 _action_success_chart(action_counts, success_counts),
+                go.Figure(),
                 "",
             )
             return
@@ -601,6 +632,7 @@ def stream_live_episode(
             bnk_f,
             act_f,
             pol_f,
+            _flow_graph(obs_after, clean_action, reward),
             "",
         )
 
@@ -656,6 +688,7 @@ def stream_live_episode(
         _bank_chart(banks, starting_bank),
         _action_dist_chart(action_counts, mode=distribution_view),
         _action_success_chart(action_counts, success_counts),
+        go.Figure(),
         _scorecard_html(final_record),
     )
 
@@ -787,7 +820,7 @@ def _policy_transition_outputs(
     business_id: str,
     max_steps: int,
     distribution_view: str,
-) -> Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", str]:
+) -> Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", "go.Figure", str]:
     a = comparison.get("summary", {}).get("a", {}) or {}
     b = comparison.get("summary", {}).get("b", {}) or {}
     lines = [
@@ -812,6 +845,7 @@ def _policy_transition_outputs(
         _comparison_bank_chart(comparison),
         _comparison_success_chart(comparison),
         _action_dist_chart(trained_dist, mode=distribution_view, title="Trained action distribution (%)"),
+        go.Figure(),
         _comparison_html(comparison),
     )
 
@@ -821,7 +855,7 @@ def run_policy_transition(
     business_id: str,
     max_steps: int = DEMO_MAX_STEPS,
     distribution_view: str = "bar",
-) -> Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", str]:
+) -> Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", "go.Figure", str]:
     """Run baseline->trained on same seed and summarize policy transition."""
     seed = int(seed)
     business_id = (business_id or "").strip()
@@ -846,7 +880,7 @@ def stream_policy_transition(
     business_id: str,
     max_steps: int = DEMO_MAX_STEPS,
     distribution_view: str = "bar",
-) -> Iterable[Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", str]]:
+) -> Iterable[Tuple[str, str, str, "plt.Figure", "plt.Figure", "plt.Figure", "go.Figure", str]]:
     """Stream baseline->trained same-seed comparison with live per-policy progress."""
     seed = int(seed)
     business_id = (business_id or "").strip()
@@ -905,6 +939,7 @@ def stream_policy_transition(
         _comparison_bank_chart_partial(baseline_series, trained_series),
         _comparison_success_chart_partial(baseline_attempts, baseline_successes, trained_attempts, trained_successes),
         _action_dist_chart(Counter(), mode=distribution_view, title="Current policy action mix"),
+        go.Figure(),
         "",
     )
 
@@ -984,6 +1019,7 @@ def stream_policy_transition(
                 _comparison_bank_chart_partial(baseline_series, trained_series),
                 _comparison_success_chart_partial(baseline_attempts, baseline_successes, trained_attempts, trained_successes),
                 _action_dist_chart(current_counts, mode=distribution_view, title=f"{pending_label} action distribution (live)"),
+                go.Figure(),
                 "",
             )
             continue
@@ -996,6 +1032,7 @@ def stream_policy_transition(
                 _comparison_bank_chart_partial(baseline_series, trained_series),
                 _comparison_success_chart_partial(baseline_attempts, baseline_successes, trained_attempts, trained_successes),
                 _action_dist_chart(Counter(), mode=distribution_view, title="Current policy action mix"),
+                go.Figure(),
                 "",
             )
             return

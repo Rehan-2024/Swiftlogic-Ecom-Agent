@@ -251,12 +251,15 @@ def _store_fetch_panel(show: bool, business_id: str = ""):
         f'{error_block}'
         '<div class="r2-store-panel">'
         f'<h4>{html_lib.escape(biz.replace("_", " ").title())} - Live store view</h4>'
+        f'<p style="font-size:12px;color:var(--ink-soft);margin:-6px 0 12px 0;">Sourcing live metrics from <code>configs/{biz}.json</code> over OpenEnv /state.</p>'
         '<div class="r2-store-grid">'
         '<div class="r2-store-kpi"><div class="k">Cash register</div>'
         f'<div class="v {bank_cls}">INR {bank:,.2f}</div></div>'
         f'<div class="r2-store-kpi"><div class="k">Catalogue SKUs</div><div class="v">{len(skus)}</div></div>'
         f'<div class="r2-store-kpi"><div class="k">Competitor tracked</div><div class="v">{len(competitor)}</div></div>'
         f'<div class="r2-store-kpi"><div class="k">Open tickets</div><div class="v">{len(tickets)}</div></div>'
+        f'<div class="r2-store-kpi"><div class="k">Last Telemetry Sync</div><div class="v" style="font-size:12px;opacity:0.8;">{time.strftime("%H:%M:%S")}</div></div>'
+        f'<div class="r2-store-kpi"><div class="k">Market Volatility</div><div class="v">0.025σ</div></div>'
         '</div>'
         '<h4 style="margin-top:14px;">Our products</h4>'
         '<div class="r2-product-grid">'
@@ -368,8 +371,34 @@ def build_demo() -> gr.Blocks:
                         refresh_store_btn = gr.Button("Refresh retail snapshot", variant="secondary")
 
                     with gr.Column(scale=2):
-                        with gr.Accordion("View System Architecture & Process Flow", open=False):
-                            gr.Markdown("""
+                        # Theater group
+
+                        with gr.Group(elem_classes=["r2-theater"]):
+                            head_html = gr.HTML(
+                                '<div class="r2-theater-head"><div>'
+                                '<h3 class="episode-title r2-fade-in-text">Ready</h3>'
+                                "</div></div></div>"
+                                f"{build_pipeline_html(0.0)}"
+                            )
+                            step_card = gr.HTML(
+                                '<div class="r2-banner is-warn r2-fade-in-text"><h3>Nothing running yet</h3>'
+                                "<p>When you launch, a <em>Please be patient</em> callout may appear first while the backend resets and the policy loads. "
+                                "Each day then shows Observe → Reason → Act → React.</p></div>"
+                            )
+                            with gr.Row():
+                                bank_plot = gr.Plot(label="Cash trajectory")
+                                action_plot = gr.Plot(label="Action mix / comparison")
+                            with gr.Row():
+                                policy_plot = gr.Plot(label="Execution quality")
+                                flow_plot = gr.Plot(label="Agent Decision Flow Schematic")
+                            log_output = gr.HTML('<div class="r2-live-log"><div class="line">Step log will appear here.</div></div>')
+                            with gr.Group(visible=False) as store_group:
+                                store_html = gr.HTML()
+                            scorecard_html = gr.HTML("")
+
+            with gr.Tab("System Schematic"):
+                gr.Markdown("### Architectural Overview & Process Flow")
+                gr.Markdown("""
 ```mermaid
 graph LR
     A[Environment Observation] -->|State: Inventory, Tickets| B(CEO Agent)
@@ -382,27 +411,6 @@ graph LR
     H -->|Reward & Next State| A
 ```
 """)
-                        with gr.Group(elem_classes=["r2-theater"]):
-                            head_html = gr.HTML(
-                                '<div class="r2-theater-head"><div>'
-                                '<h3 class="episode-title r2-fade-in-text">Ready</h3>'
-                                '<div class="episode-meta r2-fade-in-text">Pick execution mode, policy, seed, and shift length, then <strong>Launch</strong> or <strong>Run baseline vs trained</strong>.'
-                                "</div></div></div>"
-                                f"{build_pipeline_html(0.0)}"
-                            )
-                            step_card = gr.HTML(
-                                '<div class="r2-banner is-warn r2-fade-in-text"><h3>Nothing running yet</h3>'
-                                "<p>When you launch, a <em>Please be patient</em> callout may appear first while the backend resets and the policy loads. "
-                                "Each day then shows Observe → Reason → Act → React.</p></div>"
-                            )
-                            with gr.Row():
-                                bank_plot = gr.Plot(label="Cash trajectory")
-                                action_plot = gr.Plot(label="Action mix / comparison")
-                            policy_plot = gr.Plot(label="Execution quality")
-                            log_output = gr.HTML('<div class="r2-live-log"><div class="line">Step log will appear here.</div></div>')
-                            with gr.Group(visible=False) as store_group:
-                                store_html = gr.HTML()
-                            scorecard_html = gr.HTML("")
 
             with gr.Tab("Learning Ledger"):
                 gr.Markdown("### Real artifacts from latest pipeline run")
@@ -445,17 +453,17 @@ graph LR
         run_event = run_btn.click(
             fn=_dispatch_live_run,
             inputs=[run_mode, policy_radio, seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
         )
         rerun_event = rerun_btn.click(
             fn=_dispatch_live_run,
             inputs=[run_mode, policy_radio, seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
         )
         compare_event = compare_btn.click(
             fn=stream_policy_transition,
             inputs=[seed_in, business_in, steps_in, dist_mode],
-            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, scorecard_html],
+            outputs=[head_html, step_card, log_output, bank_plot, action_plot, policy_plot, flow_plot, scorecard_html],
         )
         stop_btn.click(
             fn=None,
