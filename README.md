@@ -42,7 +42,7 @@ with reproducible grading and auditable step-level explanations.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Swiftlogic/CommerceOps-v2/blob/feature/training/swiftlogic_grpo_training.ipynb) — notebook training path.
 
-**Current primary Colab training entrypoint:** `grpo_single_cell_colab_v5.py` (single-cell HTTP GRPO script with live logs, fallback diagnostics, before/after metrics, and artifact checklist).
+**Current primary Colab training entrypoint:** `swiftlogic_grpo_training.ipynb` (Colab notebook with live WandB tracking, fallback diagnostics, before/after metrics, and artifact checklist).
 
 ### How to reproduce
 
@@ -53,11 +53,10 @@ pytest -q                                   # 218+ tests green
 python scripts/run_full_pipeline.py --fast-mode   # ~2 min, regenerates every artifact under artifacts/
 ```
 
-For actual GRPO training in Colab, use either:
-- `grpo_single_cell_colab_v5.py` for the fastest end-to-end training/eval pass, or
-- `swiftlogic_grpo_training.ipynb` for notebook-driven workflow.
+For actual GRPO training in Colab, use:
+- `swiftlogic_grpo_training.ipynb` for the notebook-driven workflow.
 
-Both flows are OpenEnv HTTP compatible with this repo's `server/app.py` endpoints.
+This flow is OpenEnv HTTP compatible with this repo's `server/app.py` endpoints.
 
 ### Theme alignment
 
@@ -68,7 +67,9 @@ This project is a Theme-2/3/4 entry with Theme-1 support:
 * **Theme 4 — Generalization + behavior evolution.** The same trained adapter is evaluated unchanged on `medplus_pharmacy` + `stackbase_saas`; behavior signatures and exploration entropy are tracked across checkpoints in [`artifacts/policy_signature.json`](artifacts/policy_signature.json) + [`artifacts/exploration_curve.png`](artifacts/exploration_curve.png).
 * **Theme 1 — OpenEnv contract.** Every endpoint (`/reset`, `/step`, `/state`, `/tasks`, `/grader`, `/config`, `/health`) is contract-tested at the Pydantic and HTTP-wire layers (`tests/test_openenv_contract_http.py`).
 
-### RL learning proof — six checked-in artifacts
+### RL learning proof — six checked-in artifacts + WandB Tracking
+
+> **Public WandB Tracking:** Training metrics are logged live to Weights & Biases. The `swiftlogic_grpo_training.ipynb` notebook implements anonymous experimental tracking by default to ensure transparency and reproducibility for judges without requiring an API key.
 
 | # | Claim | Artifact |
 |---|---|---|
@@ -412,7 +413,7 @@ Final-polish formatting (inference layer only):
 
 ### GRPO training
 
-Run `grpo_single_cell_colab_v5.py` in Colab for the current lightweight training path. It installs dependencies, connects to env over HTTP (`ENV_URL`), runs GRPO training with live logs, and emits the required artifacts (`before_metrics.json`, `after_metrics.json`, `generalization.json`, `reward_curve.png`, `policy_signature.json`, `composite_score.json`).
+Run `swiftlogic_grpo_training.ipynb` in Colab for the current lightweight training path. It installs dependencies, connects to env over HTTP (`ENV_URL`), runs GRPO training with live WandB logs, and emits the required artifacts (`before_metrics.json`, `after_metrics.json`, `generalization.json`, `reward_curve.png`, `policy_signature.json`, `composite_score.json`).
 
 ---
 
